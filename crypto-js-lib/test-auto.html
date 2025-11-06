@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自動測試所有功能</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "hash-wasm": "https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/index.esm.min.js"
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+    h1 {
+      color: #4ec9b0;
+      border-bottom: 2px solid #4ec9b0;
+      padding-bottom: 10px;
+    }
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-left: 4px solid #ccc;
+      background: #2d2d2d;
+      font-size: 14px;
+    }
+    .test-result.success {
+      border-left-color: #4ec9b0;
+    }
+    .test-result.error {
+      border-left-color: #f48771;
+      color: #f48771;
+    }
+    .test-result.running {
+      border-left-color: #dcdcaa;
+      color: #dcdcaa;
+    }
+    button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #1177bb;
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .summary {
+      margin-top: 20px;
+      padding: 15px;
+      background: #2d2d2d;
+      border-radius: 4px;
+    }
+    .summary h2 {
+      color: #4ec9b0;
+      margin-top: 0;
+    }
+    pre {
+      background: #1e1e1e;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Crypto Library - 自動化測試套件</h1>
+  
+  <button id="runAllBtn" onclick="runAllTests()">▶️ 執行所有測試</button>
+  <button onclick="clearResults()">🗑️ 清除結果</button>
+  
+  <div id="results"></div>
+  
+  <div id="summary" class="summary" style="display: none;">
+    <h2>📊 測試摘要</h2>
+    <div id="summaryContent"></div>
+  </div>
+
+  <script type="module">
+    import { CryptoInitializer, Pbkdf2Strategy } from './src/index.js';
+    import { 
+      encryptAes, 
+      decryptAes, 
+      encryptAesByRandomIV, 
+      decryptAesByRandomIV 
+    } from './src/CryptoExtension.js';
+    
+    let testResults = [];
+    
+    function addResult(name, status, message, details = '') {
+      const result = { name, status, message, details };
+      testResults.push(result);
+      
+      const resultsDiv = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `test-result ${status}`;
+      
+      let icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⏳';
+      div.innerHTML = `
+        <strong>${icon} ${name}</strong><br>
+        ${message}
+        ${details ? `<pre>${details}</pre>` : ''}
+      `;
+      
+      resultsDiv.appendChild(div);
+      div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+    
+    function updateSummary() {
+      const success = testResults.filter(r => r.status === 'success').length;
+      const error = testResults.filter(r => r.status === 'error').length;
+      const total = testResults.length;
+      
+      const summaryDiv = document.getElementById('summary');
+      const contentDiv = document.getElementById('summaryContent');
+      
+      summaryDiv.style.display = 'block';
+      contentDiv.innerHTML = `
+        <p><strong>總測試數:</strong> ${total}</p>
+        <p><strong>✅ 成功:</strong> ${success}</p>
+        <p><strong>❌ 失敗:</strong> ${error}</p>
+        <p><strong>成功率:</strong> ${total > 0 ? ((success/total)*100).toFixed(1) : 0}%</p>
+      `;
+    }
+    
+    window.runAllTests = async function() {
+      const btn = document.getElementById('runAllBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 測試執行中...';
+      
+      testResults = [];
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('summary').style.display = 'none';
+      
+      // 環境檢查
+      try {
+        addResult('環境檢查', 'running', '檢查瀏覽器支援...');
+        
+        if (!window.crypto || !window.crypto.subtle) {
+          throw new Error('Web Crypto API 不可用');
+        }
+        if (!window.TextEncoder) {
+          throw new Error('TextEncoder 不可用');
+        }
+        
+        // 移除 running 狀態的結果
+        document.getElementById('results').innerHTML = '';
+        addResult('環境檢查', 'success', 'Web Crypto API 和 TextEncoder 可用');
+      } catch (error) {
+        addResult('環境檢查', 'error', error.message);
+        btn.disabled = false;
+        btn.textContent = '▶️ 執行所有測試';
+        updateSummary();
+        return;
+      }
+      
+      // 測試 1: AES 加密 (CryptoInitializer)
+      try {
+        addResult('AES 加密測試', 'running', '測試中...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const plainText = 'Hello, World! 測試訊息 🔐';
+        const key = 'mySecretKey123';
+        
+        await CryptoInitializer.initAesSetting(key);
+        const ctx = CryptoInitializer.getAesContextForEncryptByRandomIV();
+        const encResult = await ctx.encryptWithIVToBase64(plainText);
+        
+        if (!encResult.success) throw new Error('加密失敗');
+        
+        const decCtx = CryptoInitializer.getAesContextForDecryptByRandomIV(encResult.iv);
+        const decResult = await decCtx.decryptFromBase64(encResult.cipherText);
+        
+        if (!decResult.success) throw new Error('解密失敗');
+        if (decResult.data !== plainText) throw new Error('解密結果不符');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('AES 加密測試', 'success', '加密/解密成功', 
+          `原文: ${plainText}\n密文: ${encResult.cipherText.substring(0, 40)}...\n解密: ${decResult.data}`);
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('AES 加密測試', 'error', error.message);
+      }
+      
+      // 測試 2: CryptoExtension
+      try {
+        addResult('CryptoExtension 測試', 'running', '測試中...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const plainText = 'Extension Test';
+        const { cipher, iv } = await encryptAesByRandomIV(plainText);
+        const decrypted = await decryptAesByRandomIV(cipher, iv);
+        
+        if (decrypted !== plainText) throw new Error('解密結果不符');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('CryptoExtension 測試', 'success', 'Extension Methods 正常運作');
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('CryptoExtension 測試', 'error', error.message);
+      }
+      
+      // 測試 3: RSA 加密
+      try {
+        addResult('RSA 加密測試', 'running', '產生密鑰中...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const plainText = 'RSA Test Message';
+        const keys = await CryptoInitializer.rsaGenerateKeys(2048);
+        await CryptoInitializer.initRsaSetting(keys.publicKey, keys.privateKey);
+        
+        const ctx = CryptoInitializer.getRsaContext();
+        const encResult = await ctx.encryptToBase64(plainText);
+        
+        if (!encResult.success) throw new Error('加密失敗');
+        
+        const decResult = await ctx.decryptFromBase64(encResult.data);
+        
+        if (!decResult.success) throw new Error('解密失敗');
+        if (decResult.data !== plainText) throw new Error('解密結果不符');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('RSA 加密測試', 'success', 'RSA-2048 加密/解密成功');
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('RSA 加密測試', 'error', error.message);
+      }
+      
+      // 測試 4: SHA-256
+      try {
+        addResult('SHA-256 哈希測試', 'running', '測試中...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const text = 'Hello World';
+        const ctx = CryptoInitializer.getSha256HashContext();
+        const result = await ctx.encryptToBase64(text);
+        
+        if (!result.success) throw new Error('哈希失敗');
+        
+        // 驗證哈希值是否一致
+        const ctx2 = CryptoInitializer.getSha256HashContext();
+        const result2 = await ctx2.encryptToBase64(text);
+        
+        if (result.data !== result2.data) throw new Error('哈希結果不一致');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('SHA-256 哈希測試', 'success', '哈希計算正確', 
+          `輸入: ${text}\nSHA-256: ${result.data}`);
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('SHA-256 哈希測試', 'error', error.message);
+      }
+      
+      // 測試 5: SHA-512
+      try {
+        addResult('SHA-512 哈希測試', 'running', '測試中...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const text = 'Hello World';
+        const ctx = CryptoInitializer.getSha512HashContext();
+        const result = await ctx.encryptToBase64(text);
+        
+        if (!result.success) throw new Error('哈希失敗');
+        if (result.data.length < 80) throw new Error('SHA-512 哈希長度不正確');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('SHA-512 哈希測試', 'success', 'SHA-512 哈希計算正確');
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('SHA-512 哈希測試', 'error', error.message);
+      }
+      
+      // 測試 6: PBKDF2
+      try {
+        addResult('PBKDF2 測試', 'running', '派生密鑰中...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const password = 'myPassword123';
+        const { bytesSalt } = CryptoInitializer.generateSalt(16);
+        const pbkdf2 = new Pbkdf2Strategy();
+        
+        const key1 = await CryptoInitializer.deriveKeyFromPasswordToBase64(
+          password, bytesSalt, pbkdf2, 1000, 32
+        );
+        
+        const key2 = await CryptoInitializer.deriveKeyFromPasswordToBase64(
+          password, bytesSalt, pbkdf2, 1000, 32
+        );
+        
+        if (key1 !== key2) throw new Error('相同密碼和鹽應產生相同密鑰');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('PBKDF2 測試', 'success', 'PBKDF2 密鑰派生正確');
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('PBKDF2 測試', 'error', error.message);
+      }
+      
+      // 測試 7: 完整加密流程
+      try {
+        addResult('完整流程測試', 'running', '測試密碼加密系統...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const plainText = '這是需要保護的機密資料 🔒';
+        const password = 'securePassword123';
+        
+        // 加密
+        const { base64Salt, bytesSalt } = CryptoInitializer.generateSalt(16);
+        const pbkdf2 = new Pbkdf2Strategy();
+        const derivedKey = await CryptoInitializer.deriveKeyFromPassword(
+          password, bytesSalt, pbkdf2, 10000, 32
+        );
+        
+        const aesCtx = CryptoInitializer.getAesContextForEncryptByRandomIV();
+        aesCtx.key = derivedKey;
+        const encResult = await aesCtx.encryptWithIVToBase64(plainText);
+        
+        if (!encResult.success) throw new Error('加密失敗');
+        
+        // 解密
+        const saltBytes = new Uint8Array(
+          atob(base64Salt).split('').map(c => c.charCodeAt(0))
+        );
+        const derivedKey2 = await CryptoInitializer.deriveKeyFromPassword(
+          password, saltBytes, pbkdf2, 10000, 32
+        );
+        
+        const decCtx = CryptoInitializer.getAesContextForDecryptByRandomIV(encResult.iv);
+        decCtx.key = derivedKey2;
+        const decResult = await decCtx.decryptFromBase64(encResult.cipherText);
+        
+        if (!decResult.success) throw new Error('解密失敗');
+        if (decResult.data !== plainText) throw new Error('解密結果不符');
+        
+        document.getElementById('results').lastChild.remove();
+        addResult('完整流程測試', 'success', 
+          '密碼加密系統完整運作 (KDF + AES)');
+      } catch (error) {
+        document.getElementById('results').lastChild.remove();
+        addResult('完整流程測試', 'error', error.message);
+      }
+      
+      btn.disabled = false;
+      btn.textContent = '▶️ 執行所有測試';
+      updateSummary();
+    };
+    
+    window.clearResults = function() {
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('summary').style.display = 'none';
+      testResults = [];
+    };
+    
+    // 頁面載入時顯示環境資訊
+    console.log('🧪 自動化測試套件已載入');
+    console.log('環境資訊:');
+    console.log('- Web Crypto API:', !!window.crypto?.subtle);
+    console.log('- TextEncoder:', !!window.TextEncoder);
+    console.log('- 協議:', window.location.protocol);
+    console.log('- 主機:', window.location.host);
+  </script>
+</body>
+</html>

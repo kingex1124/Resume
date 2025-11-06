@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>個人履歷 - 加密展示系統</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "hash-wasm": "https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/index.esm.min.js"
+      }
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    /* 登入畫面 */
+    #loginScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+    
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .login-box h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 2em;
+    }
+    
+    .login-box p {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .lock-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+      display: none;
+      border-left: 4px solid #c62828;
+    }
+    
+    .error-message.show {
+      display: block;
+    }
+    
+    .hint {
+      margin-top: 20px;
+      padding: 12px;
+      background: #e3f2fd;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1976d2;
+      border-left: 4px solid #1976d2;
+    }
+    
+    /* 主要內容畫面 */
+    #mainContent {
+      display: none;
+    }
+    
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header-info h1 {
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+    
+    .header-info p {
+      color: #666;
+    }
+    
+    .logout-btn {
+      padding: 10px 20px;
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    
+    .logout-btn:hover {
+      background: #d32f2f;
+    }
+    
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+    
+    .card h3 {
+      color: #444;
+      margin: 15px 0 10px;
+      font-size: 1.2em;
+    }
+    
+    .card-content {
+      color: #555;
+    }
+    
+    .info-item {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: start;
+    }
+    
+    .info-item strong {
+      color: #667eea;
+      min-width: 80px;
+      font-weight: 600;
+    }
+    
+    .skill-category {
+      margin-bottom: 15px;
+    }
+    
+    .skill-category h4 {
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+    
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .skill-tag {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 0.9em;
+    }
+    
+    .experience-item, .project-item {
+      margin-bottom: 25px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .experience-item h3, .project-item h3 {
+      color: #667eea;
+      margin: 0 0 5px 0;
+    }
+    
+    .period, .tech {
+      color: #888;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    
+    .achievements {
+      margin-top: 10px;
+      padding-left: 20px;
+    }
+    
+    .achievements li {
+      margin-bottom: 5px;
+      color: #555;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    
+    @media (max-width: 768px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 登入畫面 -->
+    <div id="loginScreen">
+      <div class="login-box">
+        <div class="lock-icon">🔒</div>
+        <h1>個人履歷</h1>
+        <p>此內容已加密保護，請輸入密碼以檢視</p>
+        
+        <div class="input-group">
+          <label for="passwordInput">密碼</label>
+          <input 
+            type="password" 
+            id="passwordInput" 
+            placeholder="請輸入密碼"
+            autocomplete="current-password"
+          >
+        </div>
+        
+        <button class="btn" id="loginBtn">解鎖並檢視</button>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <div class="hint">
+          <strong>💡 提示：</strong> 預設密碼是 <code>mySecurePassword123</code>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 主要內容 -->
+    <div id="mainContent">
+      <div class="header">
+        <div class="header-info">
+          <h1>🎉 歡迎回來</h1>
+          <p>資料已成功解密並載入</p>
+        </div>
+        <button class="logout-btn" id="logoutBtn">登出</button>
+      </div>
+      
+      <div id="contentArea">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>正在載入資料...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { DataRepository } from './repositories/DataRepository.js';
+    import { DecryptionService } from './services/DecryptionService.js';
+    import { AuthMiddleware } from './middleware/AuthMiddleware.js';
+    
+    // DOM 元素
+    const loginScreen = document.getElementById('loginScreen');
+    const mainContent = document.getElementById('mainContent');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const contentArea = document.getElementById('contentArea');
+    
+    let encryptedData = null;
+    
+    // 頁面載入時取得加密資料
+    async function init() {
+      try {
+        encryptedData = await DataRepository.loadEncryptedData();
+        console.log('✅ 初始化完成');
+      } catch (error) {
+        showError('無法載入資料檔案: ' + error.message);
+      }
+    }
+    
+    // 登入處理
+    async function handleLogin() {
+      const password = passwordInput.value;
+      
+      if (!password) {
+        showError('請輸入密碼');
+        return;
+      }
+      
+      // 顯示載入狀態
+      loginBtn.disabled = true;
+      loginBtn.textContent = '解密中...';
+      errorMessage.classList.remove('show');
+      
+      try {
+        // 使用 AuthMiddleware 進行身份驗證
+        const result = await AuthMiddleware.authenticate(
+          password,
+          encryptedData,
+          DecryptionService.decryptData.bind(DecryptionService)
+        );
+        
+        if (result.success) {
+          // 驗證成功，顯示內容
+          displayContent(result.data);
+          loginScreen.style.display = 'none';
+          mainContent.style.display = 'block';
+        } else {
+          // 驗證失敗
+          showError(result.message);
+        }
+        
+      } catch (error) {
+        showError('發生錯誤: ' + error.message);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = '解鎖並檢視';
+      }
+    }
+    
+    // 顯示內容
+    function displayContent(data) {
+      const html = `
+        <!-- 個人資訊 -->
+        <div class="content-grid">
+          <div class="card full-width">
+            <h2>👤 個人資訊</h2>
+            <div class="card-content">
+              <div class="info-item">
+                <strong>姓名：</strong>
+                <span>${data.personal.name}</span>
+              </div>
+              <div class="info-item">
+                <strong>職稱：</strong>
+                <span>${data.personal.title}</span>
+              </div>
+              <div class="info-item">
+                <strong>Email：</strong>
+                <span>${data.personal.email}</span>
+              </div>
+              <div class="info-item">
+                <strong>電話：</strong>
+                <span>${data.personal.phone}</span>
+              </div>
+              <div class="info-item">
+                <strong>地點：</strong>
+                <span>${data.personal.location}</span>
+              </div>
+              <div class="info-item">
+                <strong>簡介：</strong>
+                <span>${data.personal.bio}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 技能 -->
+          <div class="card">
+            <h2>💻 專業技能</h2>
+            <div class="card-content">
+              ${data.skills.map(skill => `
+                <div class="skill-category">
+                  <h4>${skill.category}</h4>
+                  <div class="skill-tags">
+                    ${skill.items.map(item => `<span class="skill-tag">${item}</span>`).join('')}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <!-- 教育背景 -->
+          <div class="card">
+            <h2>🎓 教育背景</h2>
+            <div class="card-content">
+              ${data.education.map(edu => `
+                <div class="experience-item">
+                  <h3>${edu.school}</h3>
+                  <div class="period">${edu.period}</div>
+                  <p>${edu.degree}</p>
+                  <p><strong>GPA:</strong> ${edu.gpa}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <!-- 工作經驗 -->
+          <div class="card full-width">
+            <h2>💼 工作經驗</h2>
+            <div class="card-content">
+              ${data.experience.map(exp => `
+                <div class="experience-item">
+                  <h3>${exp.company} - ${exp.position}</h3>
+                  <div class="period">${exp.period}</div>
+                  <p>${exp.description}</p>
+                  ${exp.achievements ? `
+                    <ul class="achievements">
+                      ${exp.achievements.map(ach => `<li>${ach}</li>`).join('')}
+                    </ul>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <!-- 專案作品 -->
+          <div class="card full-width">
+            <h2>🚀 專案作品</h2>
+            <div class="card-content">
+              ${data.projects.map(proj => `
+                <div class="project-item">
+                  <h3>${proj.name}</h3>
+                  <p>${proj.description}</p>
+                  <div class="tech">
+                    <strong>技術：</strong> ${proj.tech.join(', ')}
+                  </div>
+                  ${proj.url ? `<a href="${proj.url}" target="_blank" style="color: #667eea;">🔗 查看專案</a>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <!-- 證照 -->
+          <div class="card full-width">
+            <h2>📜 專業證照</h2>
+            <div class="card-content">
+              <div class="skill-tags">
+                ${data.certifications.map(cert => `
+                  <span class="skill-tag">${cert.name} (${cert.year})</span>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      contentArea.innerHTML = html;
+    }
+    
+    // 登出處理
+    function handleLogout() {
+      AuthMiddleware.logout();
+      mainContent.style.display = 'none';
+      loginScreen.style.display = 'flex';
+      passwordInput.value = '';
+      errorMessage.classList.remove('show');
+      contentArea.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在載入資料...</p></div>';
+    }
+    
+    // 顯示錯誤訊息
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
+    }
+    
+    // Session 過期處理
+    window.addEventListener('sessionExpired', (event) => {
+      alert(event.detail.message);
+      handleLogout();
+    });
+    
+    // 事件監聽
+    loginBtn.addEventListener('click', handleLogin);
+    logoutBtn.addEventListener('click', handleLogout);
+    
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleLogin();
+      }
+    });
+    
+    // 頁面載入時初始化
+    init();
+    
+    console.log('🔐 加密履歷系統已載入');
+    console.log('💡 預設密碼: mySecurePassword123');
+  </script>
+</body>
+</html>

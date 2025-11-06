@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto JS Library - 使用範例</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "hash-wasm": "https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/index.esm.min.js"
+      }
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .section {
+      margin-bottom: 40px;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 5px;
+      border-left: 4px solid #667eea;
+      word-break: break-all;
+    }
+    .result strong {
+      color: #667eea;
+    }
+    .error {
+      border-left-color: #e74c3c;
+      color: #e74c3c;
+    }
+    .success {
+      border-left-color: #27ae60;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Crypto JS Library</h1>
+    <p class="subtitle">完整的前端加密函式庫使用範例</p>
+
+    <!-- AES 加密 -->
+    <div class="section">
+      <h2>1. AES 加密 (對稱加密)</h2>
+      <div class="input-group">
+        <label>明文:</label>
+        <input type="text" id="aesPlainText" value="Hello, 這是測試訊息!" placeholder="輸入要加密的文字">
+      </div>
+      <div class="input-group">
+        <label>密鑰:</label>
+        <input type="text" id="aesKey" value="mySecretKey123" placeholder="輸入密鑰">
+      </div>
+      <button onclick="aesEncryptFixed()">加密 (固定 IV)</button>
+      <button onclick="aesEncryptRandom()">加密 (隨機 IV)</button>
+      <button onclick="aesDecrypt()">解密</button>
+      <div id="aesResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- RSA 加密 -->
+    <div class="section">
+      <h2>2. RSA 加密 (非對稱加密)</h2>
+      <div class="input-group">
+        <label>明文:</label>
+        <input type="text" id="rsaPlainText" value="RSA 測試訊息" placeholder="輸入要加密的文字">
+      </div>
+      <button onclick="rsaGenerateKeys()">產生金鑰對</button>
+      <button onclick="rsaEncrypt()">加密</button>
+      <button onclick="rsaDecrypt()">解密</button>
+      <div id="rsaResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- SHA 哈希 -->
+    <div class="section">
+      <h2>3. SHA 哈希</h2>
+      <div class="input-group">
+        <label>要哈希的文字:</label>
+        <input type="text" id="hashText" value="Hello World" placeholder="輸入要哈希的文字">
+      </div>
+      <button onclick="sha256Hash()">SHA-256</button>
+      <button onclick="sha512Hash()">SHA-512</button>
+      <div id="hashResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- KDF 密鑰派生 -->
+    <div class="section">
+      <h2>4. KDF 密鑰派生</h2>
+      <div class="input-group">
+        <label>密碼:</label>
+        <input type="password" id="kdfPassword" value="myPassword123" placeholder="輸入密碼">
+      </div>
+      <button onclick="kdfGenerate()">產生隨機鹽</button>
+      <button onclick="kdfDerive()">派生密鑰 (Argon2)</button>
+      <button onclick="kdfDerivePbkdf2()">派生密鑰 (PBKDF2)</button>
+      <button onclick="kdfVerify()">驗證密鑰</button>
+      <div id="kdfResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- 完整範例 -->
+    <div class="section">
+      <h2>5. 完整範例: 密碼加密系統</h2>
+      <div class="grid">
+        <div>
+          <h3 style="color: #667eea; margin-bottom: 10px;">加密</h3>
+          <div class="input-group">
+            <label>明文:</label>
+            <textarea id="fullPlainText" placeholder="輸入要加密的文字">這是機密資料，需要用密碼保護</textarea>
+          </div>
+          <div class="input-group">
+            <label>密碼:</label>
+            <input type="password" id="fullPassword" value="mySecurePassword" placeholder="輸入密碼">
+          </div>
+          <button onclick="fullEncrypt()">加密</button>
+        </div>
+        <div>
+          <h3 style="color: #667eea; margin-bottom: 10px;">解密</h3>
+          <div class="input-group">
+            <label>密碼:</label>
+            <input type="password" id="fullDecryptPassword" value="mySecurePassword" placeholder="輸入密碼">
+          </div>
+          <button onclick="fullDecrypt()">解密</button>
+        </div>
+      </div>
+      <div id="fullResult" class="result" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { CryptoInitializer, Pbkdf2Strategy } from './src/index.js';
+    
+    // 全域變數儲存結果
+    window.cryptoData = {
+      aes: {},
+      rsa: {},
+      kdf: {},
+      full: {}
+    };
+
+    // ==================== AES 功能 ====================
+    window.aesEncryptFixed = async function() {
+      try {
+        const plainText = document.getElementById('aesPlainText').value;
+        const key = document.getElementById('aesKey').value;
+        const iv = 'fixedIV12345678';
+        
+        await CryptoInitializer.initAesSetting(key, iv);
+        const context = CryptoInitializer.getAesContextForEncrypt();
+        const result = await context.encryptToBase64(plainText);
+        
+        if (result.success) {
+          window.cryptoData.aes.cipher = result.data;
+          window.cryptoData.aes.iv = iv;
+          window.cryptoData.aes.key = key;
+          showResult('aesResult', `加密成功!<br><strong>密文:</strong> ${result.data}`, 'success');
+        }
+      } catch (error) {
+        showResult('aesResult', `加密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.aesEncryptRandom = async function() {
+      try {
+        const plainText = document.getElementById('aesPlainText').value;
+        const key = document.getElementById('aesKey').value;
+        
+        await CryptoInitializer.initAesSetting(key);
+        const context = CryptoInitializer.getAesContextForEncryptByRandomIV();
+        const result = await context.encryptWithIVToBase64(plainText);
+        
+        if (result.success) {
+          window.cryptoData.aes.cipher = result.cipherText;
+          window.cryptoData.aes.iv = result.iv;
+          window.cryptoData.aes.key = key;
+          showResult('aesResult', `加密成功!<br><strong>密文:</strong> ${result.cipherText}<br><strong>IV:</strong> ${result.iv}`, 'success');
+        }
+      } catch (error) {
+        showResult('aesResult', `加密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.aesDecrypt = async function() {
+      try {
+        if (!window.cryptoData.aes.cipher) {
+          throw new Error('請先加密!');
+        }
+        
+        const context = CryptoInitializer.getAesContextForDecryptByRandomIV(window.cryptoData.aes.iv);
+        const result = await context.decryptFromBase64(window.cryptoData.aes.cipher);
+        
+        if (result.success) {
+          showResult('aesResult', `解密成功!<br><strong>明文:</strong> ${result.data}`, 'success');
+        }
+      } catch (error) {
+        showResult('aesResult', `解密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    // ==================== RSA 功能 ====================
+    window.rsaGenerateKeys = async function() {
+      try {
+        const keys = await CryptoInitializer.rsaGenerateKeys(2048);
+        window.cryptoData.rsa.publicKey = keys.publicKey;
+        window.cryptoData.rsa.privateKey = keys.privateKey;
+        await CryptoInitializer.initRsaSetting(keys.publicKey, keys.privateKey);
+        showResult('rsaResult', `金鑰對產生成功!<br><strong>公鑰:</strong> ${keys.publicKey.substring(0, 100)}...<br><strong>私鑰:</strong> ${keys.privateKey.substring(0, 100)}...`, 'success');
+      } catch (error) {
+        showResult('rsaResult', `產生金鑰失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.rsaEncrypt = async function() {
+      try {
+        if (!window.cryptoData.rsa.publicKey) {
+          throw new Error('請先產生金鑰對!');
+        }
+        
+        const plainText = document.getElementById('rsaPlainText').value;
+        const context = CryptoInitializer.getRsaContext();
+        const result = await context.encryptToBase64(plainText);
+        
+        if (result.success) {
+          window.cryptoData.rsa.cipher = result.data;
+          showResult('rsaResult', `加密成功!<br><strong>密文:</strong> ${result.data}`, 'success');
+        }
+      } catch (error) {
+        showResult('rsaResult', `加密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.rsaDecrypt = async function() {
+      try {
+        if (!window.cryptoData.rsa.cipher) {
+          throw new Error('請先加密!');
+        }
+        
+        const context = CryptoInitializer.getRsaContext();
+        const result = await context.decryptFromBase64(window.cryptoData.rsa.cipher);
+        
+        if (result.success) {
+          showResult('rsaResult', `解密成功!<br><strong>明文:</strong> ${result.data}`, 'success');
+        }
+      } catch (error) {
+        showResult('rsaResult', `解密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    // ==================== SHA 哈希 ====================
+    window.sha256Hash = async function() {
+      try {
+        const text = document.getElementById('hashText').value;
+        const context = CryptoInitializer.getSha256HashContext();
+        const result = await context.encryptToBase64(text);
+        
+        if (result.success) {
+          showResult('hashResult', `SHA-256 哈希:<br><strong>${result.data}</strong>`, 'success');
+        }
+      } catch (error) {
+        showResult('hashResult', `哈希失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.sha512Hash = async function() {
+      try {
+        const text = document.getElementById('hashText').value;
+        const context = CryptoInitializer.getSha512HashContext();
+        const result = await context.encryptToBase64(text);
+        
+        if (result.success) {
+          showResult('hashResult', `SHA-512 哈希:<br><strong>${result.data}</strong>`, 'success');
+        }
+      } catch (error) {
+        showResult('hashResult', `哈希失敗: ${error.message}`, 'error');
+      }
+    };
+
+    // ==================== KDF 功能 ====================
+    window.kdfGenerate = function() {
+      try {
+        const { base64Salt, bytesSalt } = CryptoInitializer.generateSalt(16);
+        window.cryptoData.kdf.salt = bytesSalt;
+        window.cryptoData.kdf.saltBase64 = base64Salt;
+        showResult('kdfResult', `隨機鹽產生成功!<br><strong>Base64:</strong> ${base64Salt}`, 'success');
+      } catch (error) {
+        showResult('kdfResult', `產生鹽失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.kdfDerive = async function() {
+      try {
+        if (!window.cryptoData.kdf.salt) {
+          throw new Error('請先產生隨機鹽!');
+        }
+        
+        const password = document.getElementById('kdfPassword').value;
+        
+        // 動態載入 Argon2Strategy
+        showResult('kdfResult', '正在使用 Argon2 派生密鑰，請稍候...', 'success');
+        
+        const { Argon2Strategy } = await import('./src/kdf/Argon2Strategy.js');
+        const argon2Strategy = new Argon2Strategy(65536, 1);
+        
+        const derivedKey = await CryptoInitializer.deriveKeyFromPasswordToBase64(
+          password,
+          window.cryptoData.kdf.salt,
+          argon2Strategy,
+          3,
+          32
+        );
+        
+        window.cryptoData.kdf.derivedKey = derivedKey;
+        showResult('kdfResult', `Argon2 派生成功!<br><strong>密鑰:</strong> ${derivedKey}`, 'success');
+      } catch (error) {
+        showResult('kdfResult', `派生失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.kdfDerivePbkdf2 = async function() {
+      try {
+        if (!window.cryptoData.kdf.salt) {
+          throw new Error('請先產生隨機鹽!');
+        }
+        
+        const password = document.getElementById('kdfPassword').value;
+        const pbkdf2Strategy = new Pbkdf2Strategy();
+        const derivedKey = await CryptoInitializer.deriveKeyFromPasswordToBase64(
+          password,
+          window.cryptoData.kdf.salt,
+          pbkdf2Strategy,
+          100000,
+          32
+        );
+        
+        window.cryptoData.kdf.derivedKeyPbkdf2 = derivedKey;
+        showResult('kdfResult', `PBKDF2 派生成功!<br><strong>密鑰:</strong> ${derivedKey}`, 'success');
+      } catch (error) {
+        showResult('kdfResult', `派生失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.kdfVerify = async function() {
+      try {
+        if (!window.cryptoData.kdf.derivedKeyPbkdf2) {
+          throw new Error('請先使用 PBKDF2 派生密鑰!');
+        }
+        
+        const password = document.getElementById('kdfPassword').value;
+        const keyBytes = atob(window.cryptoData.kdf.derivedKeyPbkdf2).split('').map(c => c.charCodeAt(0));
+        const expectedKey = new Uint8Array(keyBytes);
+        
+        const pbkdf2Strategy = new Pbkdf2Strategy();
+        const isValid = await CryptoInitializer.verifyDerivedKey(
+          password,
+          window.cryptoData.kdf.salt,
+          expectedKey,
+          pbkdf2Strategy,
+          100000
+        );
+        
+        showResult('kdfResult', `驗證結果: <strong>${isValid ? '成功 ✓' : '失敗 ✗'}</strong>`, isValid ? 'success' : 'error');
+      } catch (error) {
+        showResult('kdfResult', `驗證失敗: ${error.message}`, 'error');
+      }
+    };
+
+    // ==================== 完整範例 ====================
+    window.fullEncrypt = async function() {
+      try {
+        const plainText = document.getElementById('fullPlainText').value;
+        const password = document.getElementById('fullPassword').value;
+        
+        showResult('fullResult', '正在加密，請稍候...', 'success');
+        
+        // 1. 產生隨機鹽
+        const { base64Salt, bytesSalt } = CryptoInitializer.generateSalt(16);
+        
+        // 2. 從密碼派生密鑰 (使用 PBKDF2 較快)
+        const pbkdf2 = new Pbkdf2Strategy();
+        const derivedKey = await CryptoInitializer.deriveKeyFromPassword(password, bytesSalt, pbkdf2, 100000, 32);
+        
+        // 3. 使用派生的密鑰進行 AES 加密
+        const aesContext = CryptoInitializer.getAesContextForEncryptByRandomIV();
+        aesContext.key = derivedKey;
+        
+        const encryptResult = await aesContext.encryptWithIVToBase64(plainText);
+        
+        if (encryptResult.success) {
+          window.cryptoData.full = {
+            cipherText: encryptResult.cipherText,
+            iv: encryptResult.iv,
+            salt: base64Salt
+          };
+          
+          showResult('fullResult', 
+            `加密成功!<br>` +
+            `<strong>密文:</strong> ${encryptResult.cipherText}<br>` +
+            `<strong>IV:</strong> ${encryptResult.iv}<br>` +
+            `<strong>鹽:</strong> ${base64Salt}`,
+            'success'
+          );
+        }
+      } catch (error) {
+        showResult('fullResult', `加密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    window.fullDecrypt = async function() {
+      try {
+        if (!window.cryptoData.full.cipherText) {
+          throw new Error('請先加密!');
+        }
+        
+        const password = document.getElementById('fullDecryptPassword').value;
+        
+        showResult('fullResult', '正在解密，請稍候...', 'success');
+        
+        // 1. 從 Base64 轉換鹽
+        const saltBinary = atob(window.cryptoData.full.salt);
+        const bytesSalt = new Uint8Array(saltBinary.length);
+        for (let i = 0; i < saltBinary.length; i++) {
+          bytesSalt[i] = saltBinary.charCodeAt(i);
+        }
+        
+        // 2. 從密碼派生相同的密鑰 (使用 PBKDF2 較快)
+        const pbkdf2 = new Pbkdf2Strategy();
+        const derivedKey = await CryptoInitializer.deriveKeyFromPassword(password, bytesSalt, pbkdf2, 100000, 32);
+        
+        // 3. 使用派生的密鑰進行 AES 解密
+        const aesContext = CryptoInitializer.getAesContextForDecryptByRandomIV(window.cryptoData.full.iv);
+        aesContext.key = derivedKey;
+        
+        const decryptResult = await aesContext.decryptFromBase64(window.cryptoData.full.cipherText);
+        
+        if (decryptResult.success) {
+          showResult('fullResult', `解密成功!<br><strong>明文:</strong> ${decryptResult.data}`, 'success');
+        } else {
+          showResult('fullResult', `解密失敗 (可能密碼錯誤)`, 'error');
+        }
+      } catch (error) {
+        showResult('fullResult', `解密失敗: ${error.message}`, 'error');
+      }
+    };
+
+    // ==================== 輔助函數 ====================
+    function showResult(elementId, message, type = '') {
+      const element = document.getElementById(elementId);
+      element.innerHTML = message;
+      element.style.display = 'block';
+      element.className = 'result ' + type;
+    }
+
+    // ==================== 環境檢查 ====================
+    function checkEnvironment() {
+      if (!window.crypto || !window.crypto.subtle) {
+        alert('⚠️ 您的瀏覽器不支援 Web Crypto API，或需要在 HTTPS/localhost 環境下運行！');
+        console.error('Web Crypto API 不可用');
+        return false;
+      }
+      if (!window.TextEncoder || !window.TextDecoder) {
+        alert('⚠️ 您的瀏覽器不支援 TextEncoder/TextDecoder！');
+        console.error('TextEncoder/TextDecoder 不可用');
+        return false;
+      }
+      console.log('✅ 環境檢查通過');
+      return true;
+    }
+
+    // 頁面載入完成提示
+    if (checkEnvironment()) {
+      console.log('✅ Crypto JS Library 已載入!');
+      console.log('💡 開啟開發者工具查看加密過程');
+    }
+  </script>
+</body>
+</html>
