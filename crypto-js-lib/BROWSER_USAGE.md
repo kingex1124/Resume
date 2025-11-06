@@ -14,19 +14,6 @@
    - Safari 11+
    - Edge 79+
 
-### 啟動開發伺服器
-
-```bash
-# 使用 http-server (推薦)
-npx http-server -p 8000
-
-# 或使用 Python
-python -m http.server 8000
-
-# 或使用 Node.js
-npx serve -p 8000
-```
-
 ## 可用的示範頁面
 
 ### 1. test-simple.html - 簡單測試頁面

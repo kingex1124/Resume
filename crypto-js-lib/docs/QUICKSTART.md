@@ -23,19 +23,6 @@ npm run test:coverage
 
 **注意:** 由於使用了 ES6 模組,需要透過 HTTP 伺服器開啟,不能直接以 `file://` 協議開啟。
 
-### 使用簡易伺服器
-
-```bash
-# 使用 Python (如果已安裝)
-python -m http.server 8000
-
-# 或使用 Node.js http-server (需要先安裝)
-npx http-server -p 8000
-
-# 然後在瀏覽器開啟
-# http://localhost:8000/example.html
-```
-
 ## 在專案中使用
 
 ### 方式一: ES6 模組導入
