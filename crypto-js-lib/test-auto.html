@@ -6,9 +6,7 @@
   <title>自動測試所有功能</title>
   <script type="importmap">
     {
-      "imports": {
-        "hash-wasm": "https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/index.esm.min.js"
-      }
+      "imports": {}
     }
   </script>
   <style>
@@ -110,6 +108,7 @@
       const resultsDiv = document.getElementById('results');
       const div = document.createElement('div');
       div.className = `test-result ${status}`;
+      div.id = `test-${name}`;
       
       let icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⏳';
       div.innerHTML = `
@@ -120,6 +119,19 @@
       
       resultsDiv.appendChild(div);
       div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+    
+    function updateResult(name, status, message, details = '') {
+      const testId = `test-${name}`;
+      const existingDiv = document.getElementById(testId);
+      
+      if (existingDiv) {
+        existingDiv.remove();
+      }
+      
+      // 更新結果陣列
+      testResults = testResults.filter(r => r.name !== name);
+      addResult(name, status, message, details);
     }
     
     function updateSummary() {
@@ -148,31 +160,25 @@
       document.getElementById('results').innerHTML = '';
       document.getElementById('summary').style.display = 'none';
       
-      // 環境檢查
+      // 環境檢查（不計入測試數量）
       try {
-        addResult('環境檢查', 'running', '檢查瀏覽器支援...');
-        
         if (!window.crypto || !window.crypto.subtle) {
           throw new Error('Web Crypto API 不可用');
         }
         if (!window.TextEncoder) {
           throw new Error('TextEncoder 不可用');
         }
-        
-        // 移除 running 狀態的結果
-        document.getElementById('results').innerHTML = '';
-        addResult('環境檢查', 'success', 'Web Crypto API 和 TextEncoder 可用');
       } catch (error) {
-        addResult('環境檢查', 'error', error.message);
+        // 顯示錯誤但不計入測試
+        document.getElementById('results').innerHTML = `<div class="error"><h3>❌ 環境檢查失敗</h3><p>${error.message}</p></div>`;
         btn.disabled = false;
         btn.textContent = '▶️ 執行所有測試';
-        updateSummary();
         return;
       }
       
       // 測試 1: AES 加密 (CryptoInitializer)
       try {
-        addResult('AES 加密測試', 'running', '測試中...');
+        addResult('測試 1: AES 加密', 'running', '測試中...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const plainText = 'Hello, World! 測試訊息 🔐';
@@ -190,17 +196,15 @@
         if (!decResult.success) throw new Error('解密失敗');
         if (decResult.data !== plainText) throw new Error('解密結果不符');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('AES 加密測試', 'success', '加密/解密成功', 
+        updateResult('測試 1: AES 加密', 'success', '加密/解密成功', 
           `原文: ${plainText}\n密文: ${encResult.cipherText.substring(0, 40)}...\n解密: ${decResult.data}`);
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('AES 加密測試', 'error', error.message);
+        updateResult('測試 1: AES 加密', 'error', error.message);
       }
       
       // 測試 2: CryptoExtension
       try {
-        addResult('CryptoExtension 測試', 'running', '測試中...');
+        addResult('測試 2: CryptoExtension', 'running', '測試中...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const plainText = 'Extension Test';
@@ -209,16 +213,14 @@
         
         if (decrypted !== plainText) throw new Error('解密結果不符');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('CryptoExtension 測試', 'success', 'Extension Methods 正常運作');
+        updateResult('測試 2: CryptoExtension', 'success', 'Extension Methods 正常運作');
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('CryptoExtension 測試', 'error', error.message);
+        updateResult('測試 2: CryptoExtension', 'error', error.message);
       }
       
       // 測試 3: RSA 加密
       try {
-        addResult('RSA 加密測試', 'running', '產生密鑰中...');
+        addResult('測試 3: RSA 加密', 'running', '產生密鑰中...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const plainText = 'RSA Test Message';
@@ -235,16 +237,14 @@
         if (!decResult.success) throw new Error('解密失敗');
         if (decResult.data !== plainText) throw new Error('解密結果不符');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('RSA 加密測試', 'success', 'RSA-2048 加密/解密成功');
+        updateResult('測試 3: RSA 加密', 'success', 'RSA-2048 加密/解密成功');
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('RSA 加密測試', 'error', error.message);
+        updateResult('測試 3: RSA 加密', 'error', error.message);
       }
       
       // 測試 4: SHA-256
       try {
-        addResult('SHA-256 哈希測試', 'running', '測試中...');
+        addResult('測試 4: SHA-256', 'running', '測試中...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const text = 'Hello World';
@@ -259,17 +259,15 @@
         
         if (result.data !== result2.data) throw new Error('哈希結果不一致');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('SHA-256 哈希測試', 'success', '哈希計算正確', 
+        updateResult('測試 4: SHA-256', 'success', '哈希計算正確', 
           `輸入: ${text}\nSHA-256: ${result.data}`);
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('SHA-256 哈希測試', 'error', error.message);
+        updateResult('測試 4: SHA-256', 'error', error.message);
       }
       
       // 測試 5: SHA-512
       try {
-        addResult('SHA-512 哈希測試', 'running', '測試中...');
+        addResult('測試 5: SHA-512', 'running', '測試中...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const text = 'Hello World';
@@ -279,16 +277,14 @@
         if (!result.success) throw new Error('哈希失敗');
         if (result.data.length < 80) throw new Error('SHA-512 哈希長度不正確');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('SHA-512 哈希測試', 'success', 'SHA-512 哈希計算正確');
+        updateResult('測試 5: SHA-512', 'success', 'SHA-512 哈希計算正確');
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('SHA-512 哈希測試', 'error', error.message);
+        updateResult('測試 5: SHA-512', 'error', error.message);
       }
       
       // 測試 6: PBKDF2
       try {
-        addResult('PBKDF2 測試', 'running', '派生密鑰中...');
+        addResult('測試 6: PBKDF2', 'running', '派生密鑰中...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const password = 'myPassword123';
@@ -305,16 +301,14 @@
         
         if (key1 !== key2) throw new Error('相同密碼和鹽應產生相同密鑰');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('PBKDF2 測試', 'success', 'PBKDF2 密鑰派生正確');
+        updateResult('測試 6: PBKDF2', 'success', 'PBKDF2 密鑰派生正確');
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('PBKDF2 測試', 'error', error.message);
+        updateResult('測試 6: PBKDF2', 'error', error.message);
       }
       
       // 測試 7: 完整加密流程
       try {
-        addResult('完整流程測試', 'running', '測試密碼加密系統...');
+        addResult('測試 7: 完整流程', 'running', '測試密碼加密系統...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const plainText = '這是需要保護的機密資料 🔒';
@@ -348,12 +342,10 @@
         if (!decResult.success) throw new Error('解密失敗');
         if (decResult.data !== plainText) throw new Error('解密結果不符');
         
-        document.getElementById('results').lastChild.remove();
-        addResult('完整流程測試', 'success', 
+        updateResult('測試 7: 完整流程', 'success', 
           '密碼加密系統完整運作 (KDF + AES)');
       } catch (error) {
-        document.getElementById('results').lastChild.remove();
-        addResult('完整流程測試', 'error', error.message);
+        updateResult('測試 7: 完整流程', 'error', error.message);
       }
       
       btn.disabled = false;

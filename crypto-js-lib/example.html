@@ -6,9 +6,7 @@
   <title>Crypto JS Library - 使用範例</title>
   <script type="importmap">
     {
-      "imports": {
-        "hash-wasm": "https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/index.esm.min.js"
-      }
+      "imports": {}
     }
   </script>
   <style>
@@ -174,7 +172,6 @@
         <input type="password" id="kdfPassword" value="myPassword123" placeholder="輸入密碼">
       </div>
       <button onclick="kdfGenerate()">產生隨機鹽</button>
-      <button onclick="kdfDerive()">派生密鑰 (Argon2)</button>
       <button onclick="kdfDerivePbkdf2()">派生密鑰 (PBKDF2)</button>
       <button onclick="kdfVerify()">驗證密鑰</button>
       <div id="kdfResult" class="result" style="display: none;"></div>
@@ -369,6 +366,29 @@
       }
     };
 
+    window.kdfDerivePbkdf2 = async function() {
+      try {
+        if (!window.cryptoData.kdf.salt) {
+          throw new Error('請先產生隨機鹽!');
+        }
+        
+        const password = document.getElementById('kdfPassword').value;
+        const pbkdf2Strategy = new Pbkdf2Strategy();
+        const derivedKey = await CryptoInitializer.deriveKeyFromPasswordToBase64(
+          password,
+          window.cryptoData.kdf.salt,
+          pbkdf2Strategy,
+          100000,
+          32
+        );
+        
+        window.cryptoData.kdf.derivedKeyPbkdf2 = derivedKey;
+        showResult('kdfResult', `PBKDF2 派生成功!<br><strong>密鑰:</strong> ${derivedKey}`, 'success');
+      } catch (error) {
+        showResult('kdfResult', `派生失敗: ${error.message}`, 'error');
+      }
+    };
+
     window.kdfDerive = async function() {
       try {
         if (!window.cryptoData.kdf.salt) {
@@ -393,29 +413,6 @@
         
         window.cryptoData.kdf.derivedKey = derivedKey;
         showResult('kdfResult', `Argon2 派生成功!<br><strong>密鑰:</strong> ${derivedKey}`, 'success');
-      } catch (error) {
-        showResult('kdfResult', `派生失敗: ${error.message}`, 'error');
-      }
-    };
-
-    window.kdfDerivePbkdf2 = async function() {
-      try {
-        if (!window.cryptoData.kdf.salt) {
-          throw new Error('請先產生隨機鹽!');
-        }
-        
-        const password = document.getElementById('kdfPassword').value;
-        const pbkdf2Strategy = new Pbkdf2Strategy();
-        const derivedKey = await CryptoInitializer.deriveKeyFromPasswordToBase64(
-          password,
-          window.cryptoData.kdf.salt,
-          pbkdf2Strategy,
-          100000,
-          32
-        );
-        
-        window.cryptoData.kdf.derivedKeyPbkdf2 = derivedKey;
-        showResult('kdfResult', `PBKDF2 派生成功!<br><strong>密鑰:</strong> ${derivedKey}`, 'success');
       } catch (error) {
         showResult('kdfResult', `派生失敗: ${error.message}`, 'error');
       }
