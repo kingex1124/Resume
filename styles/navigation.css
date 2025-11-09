@@ -1,0 +1,205 @@
+/* Navigation Component CSS */
+
+.navigation-bar {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  gap: 2rem;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.nav-brand-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #3498db;
+  text-decoration: none;
+}
+
+.nav-menu {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu-item {
+  color: #ecf0f1;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.nav-menu-item:hover {
+  background-color: #3498db;
+  color: #fff;
+}
+
+.nav-menu-item.active {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-width: 250px;
+}
+
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.language-label {
+  color: #ecf0f1;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.language-dropdown {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #34495e;
+  border-radius: 4px;
+  background-color: #34495e;
+  color: #ecf0f1;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+.language-dropdown:hover {
+  background-color: #3d5266;
+  border-color: #3498db;
+}
+
+.language-dropdown:focus {
+  outline: none;
+  border-color: #3498db;
+  background-color: #3d5266;
+}
+
+.language-dropdown option {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 0.5rem;
+}
+
+.logout-button {
+  padding: 0.5rem 1rem;
+  background-color: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.logout-button:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+.logout-button:active {
+  transform: scale(0.98);
+}
+
+/* 平板尺寸 */
+@media (max-width: 1024px) {
+  .nav-container {
+    flex-wrap: wrap;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .nav-menu {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .nav-right {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+/* 手機尺寸 */
+@media (max-width: 640px) {
+  .nav-container {
+    flex-direction: column;
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .nav-brand {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .nav-brand-text {
+    font-size: 1.2rem;
+  }
+
+  .nav-menu {
+    flex-basis: 100%;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .nav-menu-item {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .nav-right {
+    flex-basis: 100%;
+    justify-content: center;
+    min-width: auto;
+    gap: 0.75rem;
+  }
+
+  .language-selector {
+    gap: 0.3rem;
+  }
+
+  .language-label {
+    display: none;
+  }
+
+  .language-dropdown {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .logout-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+}

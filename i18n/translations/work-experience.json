@@ -1,0 +1,119 @@
+{
+  "zh-TW": {
+    "workExperience": {
+      "title": "工作經歷",
+      "period": "期間",
+      "project": "專案/項目",
+      "role": "職務/內容",
+      "workingDays": "工作天數",
+      "period_format": "{start} ~ {end} ({duration})",
+      "modal": {
+        "close": "關閉",
+        "projectsList": "專案清單",
+        "projectDetails": "專案詳情",
+        "periodLabel": "期間",
+        "workingDaysLabel": "工作天數",
+        "roleLabel": "職務角色",
+        "rolesLabel": "職務/內容",
+        "contentLabel": "內容詳情"
+      }
+    },
+    "navigation": {
+      "home": "首頁",
+      "workExperience": "工作經歷",
+      "portfolio": "作品集",
+      "profile": "個人檔案",
+      "language": "語言",
+      "logout": "登出",
+      "confirmLogout": "確定要登出嗎？"
+    },
+    "common": {
+      "loading": "正在載入...",
+      "error": "錯誤",
+      "errorLoadingData": "載入資料失敗",
+      "tryAgain": "重試",
+      "back": "返回",
+      "close": "關閉",
+      "confirm": "確認",
+      "cancel": "取消"
+    }
+  },
+  "ja": {
+    "workExperience": {
+      "title": "職務経歴",
+      "period": "期間",
+      "project": "プロジェクト/項目",
+      "role": "職務/内容",
+      "workingDays": "稼働日数",
+      "period_format": "{start} ~ {end} ({duration})",
+      "modal": {
+        "close": "閉じる",
+        "projectsList": "プロジェクトリスト",
+        "projectDetails": "プロジェクト詳細",
+        "periodLabel": "期間",
+        "workingDaysLabel": "稼働日数",
+        "roleLabel": "職務役割",
+        "rolesLabel": "職務/内容",
+        "contentLabel": "内容詳細"
+      }
+    },
+    "navigation": {
+      "home": "ホーム",
+      "workExperience": "職務経歴",
+      "portfolio": "ポートフォリオ",
+      "profile": "プロフィール",
+      "language": "言語",
+      "logout": "ログアウト",
+      "confirmLogout": "ログアウトしてもよろしいですか？"
+    },
+    "common": {
+      "loading": "読み込み中...",
+      "error": "エラー",
+      "errorLoadingData": "データの読み込みに失敗しました",
+      "tryAgain": "もう一度試す",
+      "back": "戻る",
+      "close": "閉じる",
+      "confirm": "確認",
+      "cancel": "キャンセル"
+    }
+  },
+  "en": {
+    "workExperience": {
+      "title": "Work Experience",
+      "period": "Period",
+      "project": "Project/Item",
+      "role": "Role/Content",
+      "workingDays": "Working Days",
+      "period_format": "{start} ~ {end} ({duration})",
+      "modal": {
+        "close": "Close",
+        "projectsList": "Projects List",
+        "projectDetails": "Project Details",
+        "periodLabel": "Period",
+        "workingDaysLabel": "Working Days",
+        "roleLabel": "Job Role",
+        "rolesLabel": "Role/Content",
+        "contentLabel": "Content Details"
+      }
+    },
+    "navigation": {
+      "home": "Home",
+      "workExperience": "Work Experience",
+      "portfolio": "Portfolio",
+      "profile": "Profile",
+      "language": "Language",
+      "logout": "Logout",
+      "confirmLogout": "Are you sure you want to logout?"
+    },
+    "common": {
+      "loading": "Loading...",
+      "error": "Error",
+      "errorLoadingData": "Failed to load data",
+      "tryAgain": "Try Again",
+      "back": "Back",
+      "close": "Close",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    }
+  }
+}

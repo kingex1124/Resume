@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工作經歷 - 履歷系統</title>
+    <link rel="stylesheet" href="./styles/navigation.css">
+    <link rel="stylesheet" href="./styles/work-experience-table.css">
+    <link rel="stylesheet" href="./styles/work-experience-modal.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ecf0f1;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background-color: #fadbd8;
+            color: #c0392b;
+            padding: 1.5rem;
+            border-radius: 4px;
+            border-left: 4px solid #e74c3c;
+            margin: 2rem 0;
+        }
+
+        .error-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        footer a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        footer a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 導覽欄 -->
+    <nav id="navigation"></nav>
+
+    <!-- 主內容區域 -->
+    <main>
+        <div id="work-experience-table"></div>
+        <div id="loading" class="loading hidden">
+            <span class="loading-spinner"></span>
+            <span id="loading-text">正在載入工作經歷資料...</span>
+        </div>
+        <div id="error-container"></div>
+    </main>
+
+    <!-- 模態框容器 -->
+    <div id="modal-container"></div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>© 2025 履歷系統. 版本 1.0 | 最後更新: <span id="last-updated">2025-11-09</span></p>
+        <p><a href="index.html">返回首頁</a> | <a href="portfolio.html">檢視作品集</a></p>
+    </footer>
+
+    <!-- 載入應用程式 -->
+    <script type="module">
+        import { Navigation } from './components/Navigation.js';
+        import { WorkExperienceTable } from './components/WorkExperienceTable.js';
+        import { WorkExperienceModal } from './components/WorkExperienceModal.js';
+        import { WorkExperienceService } from './services/WorkExperienceService.js';
+        import { WorkExperienceRepository } from './repositories/WorkExperienceRepository.js';
+
+        // 應用程式狀態
+        const appState = {
+            currentLanguage: 'zh-TW',
+            workExperienceData: null,
+            sortedRows: [],
+            parentExperiences: {}
+        };
+
+        /**
+         * 初始化應用程式
+         */
+        async function initializeApp() {
+            console.log('🚀 初始化工作經歷頁面...');
+            
+            try {
+                // 初始化導覽欄
+                Navigation.initialize({
+                    containerId: 'navigation',
+                    onLanguageChange: handleLanguageChange,
+                    onLogout: handleLogout,
+                    onMenuClick: handleMenuClick
+                });
+
+                // 初始化模態框
+                WorkExperienceModal.initialize({
+                    containerId: 'modal-container'
+                });
+
+                // 載入工作經歷資料
+                await loadWorkExperienceData(appState.currentLanguage);
+
+                console.log('✅ 應用程式初始化完成');
+            } catch (error) {
+                showError('應用程式初始化失敗', error.message);
+            }
+        }
+
+        /**
+         * 載入工作經歷資料
+         * @param {string} language - 語言代碼
+         */
+        async function loadWorkExperienceData(language) {
+            showLoading(true);
+            
+            try {
+                // 載入資料
+                const data = await WorkExperienceRepository.loadWorkExperienceData(language);
+                appState.workExperienceData = data;
+
+                // 準備資料
+                const parentExperiences = await WorkExperienceService.initializeAndSortWorkExperiences(language);
+                appState.sortedRows = WorkExperienceService.prepareMainTableRows(parentExperiences);
+
+                // 建立 parent 資料索引
+                parentExperiences.forEach(exp => {
+                    appState.parentExperiences[exp.id] = exp;
+                });
+
+                // 取得翻譯
+                const translations = getTranslations(language);
+
+                // 初始化表格
+                WorkExperienceTable.initialize({
+                    containerId: 'work-experience-table',
+                    rows: appState.sortedRows,
+                    translations,
+                    onRowClick: handleTableRowClick
+                });
+
+                // 更新導覽欄
+                Navigation.setCurrentLanguage(language);
+
+                showLoading(false);
+                showError(''); // 清除任何錯誤
+
+            } catch (error) {
+                showLoading(false);
+                showError('載入工作經歷資料失敗', error.message);
+            }
+        }
+
+        /**
+         * 處理表格行點擊事件
+         * @param {Object} clickData - 點擊資料
+         */
+        function handleTableRowClick(clickData) {
+            const { type, id, data } = clickData;
+
+            if (type === 'parent') {
+                // 顯示 parent 詳情
+                const parentExp = appState.parentExperiences[id];
+                if (parentExp) {
+                    const childProjects = WorkExperienceService.getParentChildProjects(parentExp);
+                    WorkExperienceModal.showParentModal(
+                        parentExp,
+                        childProjects,
+                        handleParentModalChildClick
+                    );
+                }
+            } else if (type === 'child') {
+                // 直接顯示 child 詳情
+                WorkExperienceModal.showChildModal(data.data);
+            }
+        }
+
+        /**
+         * 處理 Parent 模態框中 Child 項目的點擊
+         * @param {Object} projectData - 專案資料
+         */
+        function handleParentModalChildClick(projectData) {
+            // 此功能在未來可實現多層模態框嵌套
+            console.log('Parent 模態框中的 Child 被點擊:', projectData);
+        }
+
+        /**
+         * 處理語言切換
+         * @param {string} language - 新語言代碼
+         */
+        async function handleLanguageChange(language) {
+            console.log(`🌐 語言切換為: ${language}`);
+            appState.currentLanguage = language;
+            await loadWorkExperienceData(language);
+        }
+
+        /**
+         * 處理登出
+         */
+        function handleLogout() {
+            console.log('🔓 用戶登出');
+            // 這裡可以實現實際的登出邏輯
+            alert('登出成功！將返回登入頁面...');
+            window.location.href = 'index.html';
+        }
+
+        /**
+         * 處理菜單點擊
+         * @param {number} index - 菜單項目索引
+         * @param {string} menuId - 菜單 ID
+         */
+        function handleMenuClick(index, menuId) {
+            console.log(`📌 菜單項目被點擊: ${index}`);
+            Navigation.setActiveMenuItem(index);
+        }
+
+        /**
+         * 顯示載入中狀態
+         * @param {boolean} show - 是否顯示
+         */
+        function showLoading(show) {
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                if (show) {
+                    loadingEl.classList.remove('hidden');
+                    loadingEl.style.display = 'block';
+                } else {
+                    loadingEl.classList.add('hidden');
+                    loadingEl.style.display = 'none';
+                }
+            }
+        }
+
+        /**
+         * 顯示錯誤訊息
+         * @param {string} title - 錯誤標題
+         * @param {string} message - 錯誤訊息
+         */
+        function showError(title = '', message = '') {
+            const errorContainer = document.getElementById('error-container');
+            if (!errorContainer) return;
+
+            if (!title && !message) {
+                errorContainer.innerHTML = '';
+                return;
+            }
+
+            errorContainer.innerHTML = `
+                <div class="error">
+                    <div class="error-title">❌ ${title}</div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        /**
+         * 取得翻譯文本
+         * @param {string} language - 語言代碼
+         * @returns {Object} 翻譯物件
+         */
+        function getTranslations(language) {
+            const translations = {
+                'zh-TW': {
+                    title: '工作經歷',
+                    period: '期間',
+                    project: '專案/項目',
+                    role: '職務/內容'
+                },
+                'ja': {
+                    title: '職務経歴',
+                    period: '期間',
+                    project: 'プロジェクト/項目',
+                    role: '職務/内容'
+                },
+                'en': {
+                    title: 'Work Experience',
+                    period: 'Period',
+                    project: 'Project/Item',
+                    role: 'Role/Content'
+                }
+            };
+
+            return translations[language] || translations['zh-TW'];
+        }
+
+        // 頁面載入完成後初始化應用
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+/* Work Experience Modal Component CSS */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 201;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.modal-container.hidden {
+  display: none;
+}
+
+.modal-container.hidden + .modal-overlay {
+  display: none;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #ecf0f1;
+  background-color: #f9f9f9;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+  flex: 1;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #95a5a6;
+  cursor: pointer;
+  padding: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.modal-close-btn:hover {
+  background-color: #ecf0f1;
+  color: #e74c3c;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  max-width: 1000px;
+}
+
+.modal-info-section {
+  background-color: #f9f9f9;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.info-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  align-items: flex-start;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-row label {
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+.info-row span {
+  color: #555;
+  flex: 1;
+  line-height: 1.6;
+}
+
+.modal-projects-section {
+  margin-top: 1.5rem;
+}
+
+.modal-projects-section h3 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+.projects-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.projects-table th {
+  background-color: #34495e;
+  color: #ecf0f1;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #bdc3c7;
+}
+
+.projects-table td {
+  padding: 0.75rem;
+  border: 1px solid #ecf0f1;
+  color: #555;
+}
+
+.projects-table tbody tr {
+  transition: background-color 0.3s;
+}
+
+.projects-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.child-project-row .clickable-text {
+  color: #3498db;
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px dotted #3498db;
+  transition: color 0.3s, text-decoration 0.3s;
+}
+
+.child-project-row .clickable-text:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.modal-content-section {
+  margin-top: 1.5rem;
+  line-height: 1.8;
+}
+
+.modal-content-section h2,
+.modal-content-section h3,
+.modal-content-section h4 {
+  color: #2c3e50;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.modal-content-section h2 {
+  font-size: 1.3rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+.modal-content-section h3 {
+  font-size: 1.1rem;
+}
+
+.modal-content-section h4 {
+  font-size: 1rem;
+}
+
+.content-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.content-list li {
+  margin: 0.5rem 0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.content-list .bullet {
+  font-weight: bold;
+  color: #3498db;
+  flex-shrink: 0;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.content-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background-color: #fff;
+}
+
+.content-table th {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #bdc3c7;
+}
+
+.content-table td {
+  padding: 0.75rem;
+  border: 1px solid #ecf0f1;
+  color: #555;
+}
+
+.content-table tbody tr:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+.content-table tbody tr:hover {
+  background-color: #f0f7ff;
+}
+
+.content-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 1rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 平板尺寸 */
+@media (max-width: 1024px) {
+  .modal-content {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .info-row {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .info-row label {
+    min-width: auto;
+  }
+
+  .projects-table th,
+  .projects-table td {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .content-list li {
+    margin: 0.4rem 0;
+    gap: 0.5rem;
+  }
+
+  .content-table th,
+  .content-table td {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* 手機尺寸 */
+@media (max-width: 640px) {
+  .modal-content {
+    max-width: 98vw;
+    max-height: 80vh;
+    border-radius: 4px;
+  }
+
+  .modal-header {
+    padding: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .modal-header h2 {
+    font-size: 1.1rem;
+    flex-basis: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .modal-close-btn {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.5rem;
+  }
+
+  .modal-body {
+    padding: 0.75rem;
+  }
+
+  .modal-info-section {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .info-row {
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-row label {
+    font-size: 0.85rem;
+    min-width: 70px;
+  }
+
+  .info-row span {
+    font-size: 0.85rem;
+  }
+
+  .modal-projects-section h3 {
+    font-size: 1rem;
+  }
+
+  .projects-table th,
+  .projects-table td {
+    padding: 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .projects-table th {
+    white-space: nowrap;
+  }
+
+  .modal-content-section h2 {
+    font-size: 1.1rem;
+  }
+
+  .modal-content-section h3 {
+    font-size: 0.95rem;
+  }
+
+  .content-list li {
+    margin: 0.3rem 0;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .content-list .bullet {
+    min-width: 0.75rem;
+  }
+
+  .content-table th,
+  .content-table td {
+    padding: 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .content-image {
+    margin: 0.75rem 0;
+  }
+}
