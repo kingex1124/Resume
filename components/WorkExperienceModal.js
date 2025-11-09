@@ -39,7 +39,7 @@ export class WorkExperienceModal {
    */
   static showParentModal(parentData, childProjects = [], onChildClick = null) {
     const modalContent = this._buildParentModalContent(parentData, childProjects, onChildClick);
-    this._displayModal(modalContent, 'parent');
+    this._displayModal(modalContent, 'parent', { parentData, childProjects, onChildClick });
     
     // 綁定 child 專案點擊事件
     if (onChildClick) {
@@ -255,16 +255,17 @@ export class WorkExperienceModal {
    * 顯示模態框
    * @param {string} content - HTML 內容
    * @param {string} type - 模態框類型
+   * @param {Object} context - 額外的上下文數據（如 childProjects）
    * @private
    */
-  static _displayModal(content, type) {
+  static _displayModal(content, type, context = {}) {
     const overlay = document.getElementById('modal-overlay');
     const container = document.getElementById('modal-container-inner');
     
     if (!overlay || !container) return;
     
-    // 儲存當前內容到堆疊
-    this.currentStack.push({ type, content });
+    // 儲存當前內容和上下文到堆疊
+    this.currentStack.push({ type, content, context });
     
     container.innerHTML = content;
     overlay.classList.remove('hidden');
@@ -292,6 +293,15 @@ export class WorkExperienceModal {
       const previousModal = this.currentStack[this.currentStack.length - 1];
       container.innerHTML = previousModal.content;
       this._bindModalEvents();
+      
+      // 如果上一層是 parent modal，重新綁定 child 專案點擊事件
+      if (previousModal.type === 'parent' && previousModal.context) {
+        const { childProjects, onChildClick } = previousModal.context;
+        if (childProjects && onChildClick) {
+          this._bindChildProjectClickEvents(childProjects, onChildClick);
+        }
+      }
+      
       console.log(`📋 回到上一層對話框: ${previousModal.type}`);
     } else {
       // 堆疊為空，隱藏對話框
