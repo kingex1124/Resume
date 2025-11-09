@@ -55,7 +55,6 @@
 .table-row.parent-row {
   background-color: #fff;
   font-weight: 500;
-  border-left: 4px solid #3498db;
 }
 
 .table-row.parent-row:hover {
@@ -205,8 +204,7 @@
     padding: 1rem;
     margin: 1rem 0;
     border-radius: 4px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    min-width: 600px;
   }
 
   .table-title {
@@ -216,7 +214,7 @@
 
   .work-experience-table {
     font-size: 0.85rem;
-    min-width: 600px;
+    min-width: 100%;
   }
 
   .work-experience-table th,

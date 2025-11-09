@@ -72,8 +72,15 @@ export class Navigation {
             <span class="nav-brand-text">履歷系統</span>
           </div>
           
+          <!-- Hamburger Menu Button (Mobile Only) -->
+          <button id="hamburger-btn" class="hamburger-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          
           <!-- Menu Items -->
-          <div class="nav-menu">
+          <div class="nav-menu" id="nav-menu">
             ${menuItemsHTML}
           </div>
           
@@ -100,6 +107,29 @@ export class Navigation {
    */
   static _bindEvents(callbacks) {
     const { languages, onLanguageChange, onLogout, onMenuClick } = callbacks;
+    
+    // 漢堡菜單按鈕事件（手機版）
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const navMenu = document.getElementById('nav-menu');
+    
+    if (hamburgerBtn && navMenu) {
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navMenu.classList.toggle('active');
+        console.log('📱 漢堡菜單切換');
+      });
+    }
+    
+    // 點擊頁面其他地方時收闔菜單
+    document.addEventListener('click', (e) => {
+      if (navMenu && navMenu.classList.contains('active')) {
+        // 如果點擊不是菜單或漢堡按鈕，則收闔
+        if (!navMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+          navMenu.classList.remove('active');
+        }
+      }
+    });
     
     // 語言切換事件
     const languageSelect = document.getElementById('language-select');
@@ -131,6 +161,11 @@ export class Navigation {
           e.preventDefault();
           console.log(`📌 菜單項目被點擊: ${idx}`);
           onMenuClick(idx, item.getAttribute('data-menu-id'));
+          
+          // 手機版點擊菜單後自動收闔
+          if (navMenu) {
+            navMenu.classList.remove('active');
+          }
         });
       });
     }
