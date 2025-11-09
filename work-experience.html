@@ -141,188 +141,18 @@
         import { i18nService } from './services/i18nService.js';
         import { LanguageManager } from './services/LanguageManager.js';
 
-        // 應用程式狀態
-        const appState = {
-            currentLanguage: 'zh-TW',
-            sortedRows: [],
-            parentExperiences: {},
-            translations: null
-        };
-
-        // 初始化語言管理器（檢查 URL 參數和 localStorage）
-        const detectedLanguage = LanguageManager.initialize();
-        appState.currentLanguage = detectedLanguage;
-
-        // 初始化 i18n 服務
-        i18nService.initialize(appState.currentLanguage);
-
         /**
-         * 初始化應用程式
-         */
-        async function initializeApp() {
-            console.log('🚀 初始化工作經歷頁面...');
-            
-            try {
-                // 初始化導覽欄
-                Navigation.initialize({
-                    containerId: 'navigation',
-                    onLanguageChange: handleLanguageChange,
-                    onLogout: handleLogout,
-                    onMenuClick: handleMenuClick
-                });
-
-                // 初始化模態框
-                WorkExperienceModal.initialize({
-                    containerId: 'modal-container'
-                });
-
-                // 載入工作經歷資料
-                await loadWorkExperienceData(appState.currentLanguage);
-
-                console.log('✅ 應用程式初始化完成');
-            } catch (error) {
-                showError('應用程式初始化失敗', error.message);
-            }
-        }
-
-        /**
-         * 載入工作經歷資料
-         * @param {string} language - 語言代碼
-         */
-        async function loadWorkExperienceData(language) {
-            showLoading(true);
-            
-            try {
-                // 設置 i18n 服務的當前語言
-                i18nService.setCurrentLanguage(language);
-
-                // 並行加載：工作經歷資料 + 翻譯資料
-                const [parentExperiences, translations] = await Promise.all([
-                    WorkExperienceService.initializeAndSortWorkExperiences(language),
-                    WorkExperienceService.getWorkExperienceUIText(language)
-                ]);
-
-                // 準備表格行資料
-                appState.sortedRows = WorkExperienceService.prepareMainTableRows(parentExperiences);
-                appState.translations = translations;
-
-                // 建立 parent 資料索引
-                parentExperiences.forEach(exp => {
-                    appState.parentExperiences[exp.id] = exp;
-                });
-
-                // 初始化表格
-                WorkExperienceTable.initialize({
-                    containerId: 'work-experience-table',
-                    rows: appState.sortedRows,
-                    translations,
-                    onRowClick: handleTableRowClick
-                });
-
-                // 更新導覽欄
-                Navigation.setCurrentLanguage(language);
-
-                showLoading(false);
-                showError(''); // 清除任何錯誤
-
-            } catch (error) {
-                showLoading(false);
-                showError('載入工作經歷資料失敗', error.message);
-                console.error('❌ 詳細錯誤:', error);
-            }
-        }
-
-        /**
-         * 處理表格行點擊事件
-         * @param {Object} clickData - 點擊資料
-         */
-        function handleTableRowClick(clickData) {
-            const { type, id, data } = clickData;
-
-            if (type === 'parent') {
-                // 顯示 parent 詳情
-                const parentExp = appState.parentExperiences[id];
-                if (parentExp) {
-                    const childProjects = WorkExperienceService.getParentChildProjects(parentExp);
-                    WorkExperienceModal.showParentModal(
-                        parentExp,
-                        childProjects,
-                        handleParentModalChildClick
-                    );
-                }
-            } else if (type === 'child') {
-                // 直接顯示 child 詳情
-                WorkExperienceModal.showChildModal(data.data);
-            }
-        }
-
-        /**
-         * 處理 Parent 模態框中 Child 項目的點擊
-         * @param {Object} projectData - 專案資料
-         */
-        function handleParentModalChildClick(projectData) {
-            // 此功能在未來可實現多層模態框嵌套
-            console.log('Parent 模態框中的 Child 被點擊:', projectData);
-        }
-
-        /**
-         * 處理語言切換
-         * @param {string} language - 新語言代碼
-         */
-        async function handleLanguageChange(language) {
-            console.log(`🌐 語言切換為: ${language}`);
-            appState.currentLanguage = language;
-            
-            // 使用 LanguageManager 更新語言（自動更新 URL 和 localStorage）
-            LanguageManager.setLanguage(language);
-            
-            // 清除舊語言的翻譯快取，準備加載新語言
-            WorkExperienceService.clearTranslationCache(language);
-            
-            await loadWorkExperienceData(language);
-        }
-
-        /**
-         * 處理登出
-         */
-        function handleLogout() {
-            console.log('🔓 用戶登出');
-            // 這裡可以實現實際的登出邏輯
-            alert('登出成功！將返回登入頁面...');
-            window.location.href = 'index.html';
-        }
-
-        /**
-         * 處理菜單點擊
-         * @param {number} index - 菜單項目索引
-         * @param {string} menuId - 菜單 ID
-         */
-        function handleMenuClick(index, menuId) {
-            console.log(`📌 菜單項目被點擊: ${index}`);
-            Navigation.setActiveMenuItem(index);
-        }
-
-        /**
-         * 顯示載入中狀態
-         * @param {boolean} show - 是否顯示
+         * 顯示/隱藏載入中狀態
          */
         function showLoading(show) {
             const loadingEl = document.getElementById('loading');
             if (loadingEl) {
-                if (show) {
-                    loadingEl.classList.remove('hidden');
-                    loadingEl.style.display = 'block';
-                } else {
-                    loadingEl.classList.add('hidden');
-                    loadingEl.style.display = 'none';
-                }
+                loadingEl.style.display = show ? 'block' : 'none';
             }
         }
 
         /**
          * 顯示錯誤訊息
-         * @param {string} title - 錯誤標題
-         * @param {string} message - 錯誤訊息
          */
         function showError(title = '', message = '') {
             const errorContainer = document.getElementById('error-container');
@@ -333,7 +163,6 @@
                 return;
             }
 
-            const errorText = appState.translations?.common?.error || '錯誤';
             errorContainer.innerHTML = `
                 <div class="error">
                     <div class="error-title">❌ ${title}</div>
@@ -342,7 +171,58 @@
             `;
         }
 
-        // 頁面載入完成後初始化應用
+        /**
+         * 初始化應用程式
+         */
+        async function initializeApp() {
+            console.log('🚀 初始化工作經歷頁面...');
+            
+            try {
+                // 1. 初始化語言管理器（自動寫入 URL）
+                const language = LanguageManager.initialize();
+                i18nService.initialize(language);
+                
+                // 2. 初始化應用狀態
+                const appState = await WorkExperienceService.initializeApp(language);
+                
+                // 3. 初始化模態框
+                WorkExperienceModal.initialize({
+                    containerId: 'modal-container'
+                });
+
+                // 4. 初始化導覽欄
+                Navigation.initialize({
+                    containerId: 'navigation',
+                    currentLanguage: language,
+                    onLanguageChange: (lang) => WorkExperienceService.handleLanguageChange(lang, {
+                        LanguageManager,
+                        i18nService,
+                        WorkExperienceTable,
+                        showLoading,
+                        showError
+                    }),
+                    onLogout: Navigation.handleLogout,
+                    onMenuClick: Navigation.handleMenuClick
+                });
+
+                // 5. 渲染工作經歷表格
+                WorkExperienceTable.initialize({
+                    containerId: 'work-experience-table',
+                    rows: appState.sortedRows,
+                    translations: appState.translations,
+                    onRowClick: WorkExperienceService.handleTableRowClick.bind(WorkExperienceService)
+                });
+
+                showLoading(false);
+                console.log('✅ 應用程式初始化完成');
+            } catch (error) {
+                showLoading(false);
+                showError('應用程式初始化失敗', error.message);
+                console.error('❌ 詳細錯誤:', error);
+            }
+        }
+
+        // 應用啟動
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>

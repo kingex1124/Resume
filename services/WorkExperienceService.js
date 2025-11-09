@@ -1,14 +1,30 @@
 /**
  * Work Experience Service Layer
  * 處理工作經歷資料的業務邏輯：排序、格式化、對話框資料準備等、翻譯管理
+ * 也包含事件處理方法
  */
 
 import { WorkExperienceRepository } from '../repositories/WorkExperienceRepository.js';
 import { i18nService } from './i18nService.js';
+import { WorkExperienceModal } from '../components/WorkExperienceModal.js';
 
 export class WorkExperienceService {
   // 快取工作經歷翻譯資料
   static #translationCache = {};
+
+  // 應用狀態
+  static #appState = {
+    currentLanguage: 'zh-TW',
+    sortedRows: [],
+    parentExperiences: {},
+    translations: null
+  };
+
+  // 事件回調引用（用於語言切換和其他事件）
+  static #eventCallbacks = {
+    onLanguageChange: null,
+    onTableRowClick: null
+  };
   /**
    * 初始化並取得排序後的工作經歷資料
    * @param {string} language - 語言代碼
@@ -352,6 +368,221 @@ export class WorkExperienceService {
     return {
       cachedLanguages: Object.keys(this.#translationCache),
       cacheSize: Object.keys(this.#translationCache).length
+    };
+  }
+
+  // ============================================
+  // 應用初始化相關方法
+  // ============================================
+
+  /**
+   * 初始化應用狀態（從語言檢測開始）
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 應用狀態
+   */
+  static async initializeApp(language) {
+    try {
+      this.#appState.currentLanguage = language;
+      
+      // 加載工作經歷資料
+      const sortedParentExps = await this.initializeAndSortWorkExperiences(language);
+      
+      // 準備主列表行資料
+      const sortedRows = this.prepareMainTableRows(sortedParentExps);
+      
+      // 加載 UI 翻譯
+      const translations = await this.getWorkExperienceUIText(language);
+      
+      // 構建 parent 資料索引
+      const parentExperiences = {};
+      sortedParentExps.forEach(exp => {
+        parentExperiences[exp.id] = exp;
+      });
+      
+      // 更新應用狀態
+      this.#appState.sortedRows = sortedRows;
+      this.#appState.parentExperiences = parentExperiences;
+      this.#appState.translations = translations;
+      
+      console.log('✅ 應用狀態初始化完成');
+      return this.#appState;
+    } catch (error) {
+      console.error('❌ 應用初始化失敗:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 刷新應用資料（用於語言切換）
+   * @param {string} language - 新語言代碼
+   * @returns {Promise<Object>} 更新後的應用狀態
+   */
+  static async refreshAppData(language) {
+    // 清除舊語言的翻譯快取
+    this.clearTranslationCache(language);
+    
+    // 重新初始化
+    return this.initializeApp(language);
+  }
+
+  /**
+   * 取得應用狀態
+   * @returns {Object} 當前應用狀態
+   */
+  static getAppState() {
+    return { ...this.#appState };
+  }
+
+  /**
+   * 取得父工作經歷物件（按 ID）
+   * @param {string} parentId - Parent ID
+   * @returns {Object|null} Parent 工作經歷物件或 null
+   */
+  static getParentExperienceById(parentId) {
+    return this.#appState.parentExperiences[parentId] || null;
+  }
+
+  /**
+   * 取得所有排序後的表格行
+   * @returns {Array} 排序後的行陣列
+   */
+  static getMainTableRows() {
+    return [...this.#appState.sortedRows];
+  }
+
+  /**
+   * 取得當前語言
+   * @returns {string} 語言代碼
+   */
+  static getCurrentLanguage() {
+    return this.#appState.currentLanguage;
+  }
+
+  /**
+   * 取得所有翻譯
+   * @returns {Object} 翻譯物件
+   */
+  static getTranslations() {
+    return { ...this.#appState.translations };
+  }
+
+  // ============================================
+  // 事件處理方法
+  // ============================================
+
+  /**
+   * 設置事件回調
+   * @param {Object} callbacks - 回調物件
+   * @param {Function} callbacks.onLanguageChange - 語言切換回調
+   * @param {Function} callbacks.onTableRowClick - 表格行點擊回調
+   */
+  static setEventCallbacks(callbacks = {}) {
+    const { onLanguageChange, onTableRowClick } = callbacks;
+    
+    if (onLanguageChange) {
+      this.#eventCallbacks.onLanguageChange = onLanguageChange;
+    }
+    if (onTableRowClick) {
+      this.#eventCallbacks.onTableRowClick = onTableRowClick;
+    }
+    
+    console.log('✅ 事件回調已設置');
+  }
+
+  /**
+   * 獲取事件回調
+   * @returns {Object} 所有事件回調
+   */
+  static getEventCallbacks() {
+    return {
+      onLanguageChange: this.handleLanguageChange.bind(this),
+      onTableRowClick: this.handleTableRowClick.bind(this)
+    };
+  }
+
+  /**
+   * 表格行點擊事件處理
+   * @param {Object} clickData - 點擊資料
+   */
+  static handleTableRowClick(clickData) {
+    const appState = this.getAppState();
+    const { type, id, data } = clickData;
+
+    if (type === 'parent') {
+      const parentExp = appState.parentExperiences[id];
+      if (parentExp) {
+        const childProjects = this.getParentChildProjects(parentExp);
+        // 顯示 Parent 模態框，並綁定 child 專案點擊回調
+        WorkExperienceModal.showParentModal(
+          parentExp,
+          childProjects,
+          (projectData) => {
+            // Child 專案被點擊時，顯示詳情
+            WorkExperienceModal.showChildModal(projectData);
+          }
+        );
+      }
+    } else if (type === 'child') {
+      WorkExperienceModal.showChildModal(data.data);
+    }
+  }
+
+  /**
+   * 語言切換事件處理
+   * @param {string} language - 新語言代碼
+   * @param {Object} handlers - 外部事件處理器物件
+   */
+  static async handleLanguageChange(language, handlers = {}) {
+    const { 
+      LanguageManager, 
+      i18nService: i18nServiceRef,
+      WorkExperienceTable,
+      showLoading,
+      showError
+    } = handlers;
+
+    console.log(`🌐 語言切換為: ${language}`);
+    
+    if (showLoading) showLoading(true);
+    
+    try {
+      // 更新 LanguageManager（自動更新 URL 和 localStorage）
+      if (LanguageManager) {
+        LanguageManager.setLanguage(language);
+      }
+      
+      if (i18nServiceRef) {
+        i18nServiceRef.setCurrentLanguage(language);
+      }
+      
+      // 刷新應用資料
+      const appState = await this.refreshAppData(language);
+      
+      // 重新渲染表格
+      if (WorkExperienceTable) {
+        WorkExperienceTable.initialize({
+          containerId: 'work-experience-table',
+          rows: appState.sortedRows,
+          translations: appState.translations,
+          onRowClick: this.handleTableRowClick.bind(this)
+        });
+      }
+      
+      if (showLoading) showLoading(false);
+    } catch (error) {
+      if (showLoading) showLoading(false);
+      if (showError) showError('語言切換失敗', error.message);
+      console.error('❌ 語言切換錯誤:', error);
+    }
+  }
+
+  /**
+   * 獲取一個簡化的事件處理器物件（用於 HTML 中傳遞）
+   * @returns {Object} 事件處理器物件
+   */
+  static getSimplifiedHandlers() {
+    return {
+      onTableRowClick: this.handleTableRowClick.bind(this)
     };
   }
 }

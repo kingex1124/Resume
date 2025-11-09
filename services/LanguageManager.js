@@ -22,6 +22,7 @@ export class LanguageManager {
   /**
    * 初始化語言管理器
    * 優先順序：URL 參數 > localStorage > 預設語言
+   * 自動將語言寫入 URL（如果未設置）
    * @returns {string} 確定的語言代碼
    */
   static initialize() {
@@ -31,7 +32,7 @@ export class LanguageManager {
     }
 
     // 1️⃣ 先檢查 URL 參數
-    const urlLanguage = this._getLanguageFromURL();
+    let urlLanguage = this._getLanguageFromURL();
     if (urlLanguage) {
       this.#currentLanguage = urlLanguage;
       console.log(`✅ 從 URL 獲取語言: ${urlLanguage}`);
@@ -46,6 +47,8 @@ export class LanguageManager {
     if (savedLanguage) {
       this.#currentLanguage = savedLanguage;
       console.log(`✅ 從 localStorage 獲取語言: ${savedLanguage}`);
+      // 自動寫入 URL
+      this._updateURLParameter(savedLanguage);
       this.#isInitialized = true;
       return savedLanguage;
     }
@@ -54,6 +57,8 @@ export class LanguageManager {
     this.#currentLanguage = this.DEFAULT_LANGUAGE;
     console.log(`✅ 使用預設語言: ${this.DEFAULT_LANGUAGE}`);
     this._saveLanguageToStorage(this.DEFAULT_LANGUAGE);
+    // 自動寫入 URL
+    this._updateURLParameter(this.DEFAULT_LANGUAGE);
     this.#isInitialized = true;
     return this.DEFAULT_LANGUAGE;
   }

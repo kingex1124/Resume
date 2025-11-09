@@ -10,6 +10,7 @@ export class Navigation {
    * @param {string} options.containerId - 容器元素 ID
    * @param {Array} options.menuItems - 菜單項目陣列
    * @param {Array} options.languages - 支援的語言陣列
+   * @param {string} options.currentLanguage - 當前語言
    * @param {Function} options.onLanguageChange - 語言切換回調函數
    * @param {Function} options.onLogout - 登出回調函數
    * @param {Function} options.onMenuClick - 菜單點擊回調函數
@@ -23,6 +24,7 @@ export class Navigation {
         { code: 'ja', name: '日本語' },
         { code: 'en', name: 'English' }
       ],
+      currentLanguage = 'zh-TW',
       onLanguageChange = null,
       onLogout = null,
       onMenuClick = null
@@ -40,6 +42,7 @@ export class Navigation {
     // 綁定事件
     this._bindEvents({
       languages,
+      currentLanguage,
       onLanguageChange,
       onLogout,
       onMenuClick
@@ -106,7 +109,7 @@ export class Navigation {
    * @private
    */
   static _bindEvents(callbacks) {
-    const { languages, onLanguageChange, onLogout, onMenuClick } = callbacks;
+    const { languages, currentLanguage, onLanguageChange, onLogout, onMenuClick } = callbacks;
     
     // 漢堡菜單按鈕事件（手機版）
     const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -133,34 +136,38 @@ export class Navigation {
     
     // 語言切換事件
     const languageSelect = document.getElementById('language-select');
-    if (languageSelect && onLanguageChange) {
-      languageSelect.addEventListener('change', (e) => {
-        const selectedLanguage = e.target.value;
-        console.log(`🌐 語言已切換為: ${selectedLanguage}`);
-        onLanguageChange(selectedLanguage);
-      });
+    if (languageSelect) {
+      // 初始化當前語言
+      languageSelect.value = currentLanguage;
+      
+      if (onLanguageChange) {
+        languageSelect.addEventListener('change', (e) => {
+          const selectedLanguage = e.target.value;
+          console.log(`🌐 語言已切換為: ${selectedLanguage}`);
+          onLanguageChange(selectedLanguage);
+        });
+      }
     }
     
     // 登出按鈕事件
     const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn && onLogout) {
+    if (logoutBtn) {
       logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
         console.log('🔓 用戶點擊登出按鈕');
         if (confirm('確定要登出嗎？')) {
-          onLogout();
+          Navigation.handleLogout();
         }
       });
     }
     
     // 菜單項目點擊事件
     const menuItems = document.querySelectorAll('.nav-menu-item');
-    if (menuItems.length > 0 && onMenuClick) {
+    if (menuItems.length > 0) {
       menuItems.forEach((item, idx) => {
         item.addEventListener('click', (e) => {
           e.preventDefault();
-          console.log(`📌 菜單項目被點擊: ${idx}`);
-          onMenuClick(idx, item.getAttribute('data-menu-id'));
+          Navigation.handleMenuClick(idx);
           
           // 手機版點擊菜單後自動收闔
           if (navMenu) {
@@ -168,6 +175,24 @@ export class Navigation {
           }
         });
       });
+    }
+    
+    // 自訂菜單點擊回調（如果提供）
+    if (onMenuClick) {
+      const customMenuItems = document.querySelectorAll('.nav-menu-item');
+      customMenuItems.forEach((item, idx) => {
+        item.addEventListener('click', (e) => {
+          onMenuClick(idx, item.getAttribute('data-menu-id'));
+        });
+      });
+    }
+    
+    // 自訂登出回調（如果提供）
+    if (onLogout) {
+      const customLogoutBtn = document.getElementById('logout-btn');
+      if (customLogoutBtn) {
+        customLogoutBtn.addEventListener('click', onLogout);
+      }
     }
   }
   
@@ -235,5 +260,34 @@ export class Navigation {
       .join('');
     
     navMenu.innerHTML = menuItemsHTML;
+  }
+
+  // ============================================
+  // 靜態事件處理方法
+  // ============================================
+
+  /**
+   * 菜單項目點擊處理（靜態方法）
+   * @param {number} index - 菜單項目索引
+   */
+  static handleMenuClick(index) {
+    console.log(`📌 菜單項目被點擊: ${index}`);
+    this.setActiveMenuItem(index);
+    // 這裡可以添加導航邏輯
+  }
+
+  /**
+   * 登出處理（靜態方法）
+   */
+  static handleLogout() {
+    console.log('🔓 用戶登出');
+    // 清除 localStorage 中的語言設置（可選）
+    try {
+      localStorage.removeItem('app_language');
+    } catch (e) {
+      console.warn('⚠️ 無法清除 localStorage');
+    }
+    // 導航到首頁
+    window.location.href = 'index.html';
   }
 }
