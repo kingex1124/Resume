@@ -390,8 +390,30 @@
       try {
         encryptedData = await DataRepository.loadEncryptedData();
         console.log('✅ 初始化完成');
+        
+        // 嘗試從 cookie 還原會話
+        await tryRestoreSession();
       } catch (error) {
         showError('無法載入資料檔案: ' + error.message);
+      }
+    }
+    
+    // 嘗試從 cookie 還原會話
+    async function tryRestoreSession() {
+      if (!encryptedData) {
+        return;
+      }
+      
+      const result = await AuthMiddleware.restoreSessionFromCookie(
+        encryptedData,
+        DecryptionService.decryptData.bind(DecryptionService)
+      );
+      
+      if (result.success) {
+        console.log('✅ 會話已還原');
+        displayContent(result.data);
+        loginScreen.style.display = 'none';
+        mainContent.style.display = 'block';
       }
     }
     
