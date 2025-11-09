@@ -1,0 +1,23 @@
+{
+  "zh-TW": {
+    "navigation": {
+      "home": "首頁",
+      "workExperience": "工作經歷",
+      "portfolio": "作品集"
+    }
+  },
+  "ja": {
+    "navigation": {
+      "home": "ホーム",
+      "workExperience": "職務経歴",
+      "portfolio": "ポートフォリオ"
+    }
+  },
+  "en": {
+    "navigation": {
+      "home": "Home",
+      "workExperience": "Work Experience",
+      "portfolio": "Portfolio"
+    }
+  }
+}

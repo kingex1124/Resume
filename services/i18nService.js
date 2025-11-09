@@ -70,7 +70,7 @@ export class i18nService {
     }
 
     try {
-      // 從 JSON 檔案加載翻譯
+      // 從 JSON 檔案加載翻譯 work-experience.json
       const response = await fetch(`./i18n/translations/${moduleName}.json`);
       
       if (!response.ok) {

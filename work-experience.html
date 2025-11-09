@@ -94,6 +94,7 @@
                 // 4. 初始化導覽欄
                 Navigation.initialize({
                     containerId: 'navigation',
+                    menuItems: Navigation.getMenuItemsByLanguage(language, appState.translations),
                     currentLanguage: language,
                     onLanguageChange: (lang) => WorkExperienceService.handleLanguageChange(lang, {
                         LanguageManager,
@@ -102,8 +103,7 @@
                         showLoading,
                         showError
                     }),
-                    onLogout: Navigation.handleLogout,
-                    onMenuClick: Navigation.handleMenuClick
+                    onLogout: Navigation.handleLogout
                 });
 
                 // 5. 渲染工作經歷表格
