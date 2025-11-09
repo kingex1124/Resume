@@ -1,11 +1,14 @@
 /**
  * Work Experience Service Layer
- * 處理工作經歷資料的業務邏輯：排序、格式化、對話框資料準備等
+ * 處理工作經歷資料的業務邏輯：排序、格式化、對話框資料準備等、翻譯管理
  */
 
 import { WorkExperienceRepository } from '../repositories/WorkExperienceRepository.js';
+import { i18nService } from './i18nService.js';
 
 export class WorkExperienceService {
+  // 快取工作經歷翻譯資料
+  static #translationCache = {};
   /**
    * 初始化並取得排序後的工作經歷資料
    * @param {string} language - 語言代碼
@@ -249,5 +252,106 @@ export class WorkExperienceService {
   static extractParentIdFromChildId(childId) {
     if (!this.isChildId(childId)) return null;
     return childId.substring(0, 4); // 取前 4 個字元 (e.g., "C001")
+  }
+
+  // ============================================
+  // 翻譯相關方法
+  // ============================================
+
+  /**
+   * 加載工作經歷模組的翻譯資料
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 工作經歷翻譯物件
+   */
+  static async loadWorkExperienceTranslations(language) {
+    try {
+      const cacheKey = `work-experience_${language}`;
+      
+      // 檢查本地快取
+      if (this.#translationCache[cacheKey]) {
+        console.log(`📦 使用本地快取翻譯: ${cacheKey}`);
+        return this.#translationCache[cacheKey];
+      }
+
+      // 從 i18nService 加載翻譯
+      const translations = await i18nService.loadModuleTranslations('work-experience', language);
+      
+      // 快取翻譯資料
+      this.#translationCache[cacheKey] = translations;
+      
+      return translations;
+    } catch (error) {
+      console.error('❌ 加載工作經歷翻譯失敗:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 取得工作經歷 UI 文本（工作經歷特定模組的翻譯）
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 包含所有 UI 文本的翻譯物件
+   */
+  static async getWorkExperienceUIText(language) {
+    const translations = await this.loadWorkExperienceTranslations(language);
+    
+    return {
+      title: translations?.workExperience?.title || '工作經歷',
+      period: translations?.workExperience?.period || '期間',
+      project: translations?.workExperience?.project || '專案/項目',
+      role: translations?.workExperience?.role || '職務/內容',
+      workingDays: translations?.workExperience?.workingDays || '工作天數',
+      modal: translations?.workExperience?.modal || {},
+      navigation: translations?.navigation || {},
+      common: translations?.common || {}
+    };
+  }
+
+  /**
+   * 取得特定翻譯文本（使用鍵路徑）
+   * @param {string} language - 語言代碼
+   * @param {string} keyPath - 鍵路徑 (例如: 'workExperience.modal.close')
+   * @param {string} fallback - 回退文本
+   * @returns {Promise<string>} 翻譯文本
+   */
+  static async getTranslationByPath(language, keyPath, fallback = keyPath) {
+    const translations = await this.loadWorkExperienceTranslations(language);
+    return i18nService.getTranslationByPath(translations, keyPath, fallback);
+  }
+
+  /**
+   * 批量取得工作經歷頁面的所有翻譯文本
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 完整翻譯物件
+   */
+  static async getAllWorkExperienceTranslations(language) {
+    return this.loadWorkExperienceTranslations(language);
+  }
+
+  /**
+   * 清除工作經歷翻譯快取
+   * @param {string} language - 特定語言，如果為空則清除全部
+   */
+  static clearTranslationCache(language = null) {
+    if (language) {
+      const cacheKey = `work-experience_${language}`;
+      if (this.#translationCache[cacheKey]) {
+        delete this.#translationCache[cacheKey];
+        console.log(`🗑️ 已清除快取: ${cacheKey}`);
+      }
+    } else {
+      this.#translationCache = {};
+      console.log('🗑️ 已清除所有工作經歷翻譯快取');
+    }
+  }
+
+  /**
+   * 獲取翻譯快取統計
+   * @returns {Object} 快取統計資訊
+   */
+  static getTranslationCacheStats() {
+    return {
+      cachedLanguages: Object.keys(this.#translationCache),
+      cacheSize: Object.keys(this.#translationCache).length
+    };
   }
 }

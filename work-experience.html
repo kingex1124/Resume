@@ -138,15 +138,23 @@
         import { WorkExperienceTable } from './components/WorkExperienceTable.js';
         import { WorkExperienceModal } from './components/WorkExperienceModal.js';
         import { WorkExperienceService } from './services/WorkExperienceService.js';
-        import { WorkExperienceRepository } from './repositories/WorkExperienceRepository.js';
+        import { i18nService } from './services/i18nService.js';
+        import { LanguageManager } from './services/LanguageManager.js';
 
         // 應用程式狀態
         const appState = {
             currentLanguage: 'zh-TW',
-            workExperienceData: null,
             sortedRows: [],
-            parentExperiences: {}
+            parentExperiences: {},
+            translations: null
         };
+
+        // 初始化語言管理器（檢查 URL 參數和 localStorage）
+        const detectedLanguage = LanguageManager.initialize();
+        appState.currentLanguage = detectedLanguage;
+
+        // 初始化 i18n 服務
+        i18nService.initialize(appState.currentLanguage);
 
         /**
          * 初始化應用程式
@@ -185,21 +193,23 @@
             showLoading(true);
             
             try {
-                // 載入資料
-                const data = await WorkExperienceRepository.loadWorkExperienceData(language);
-                appState.workExperienceData = data;
+                // 設置 i18n 服務的當前語言
+                i18nService.setCurrentLanguage(language);
 
-                // 準備資料
-                const parentExperiences = await WorkExperienceService.initializeAndSortWorkExperiences(language);
+                // 並行加載：工作經歷資料 + 翻譯資料
+                const [parentExperiences, translations] = await Promise.all([
+                    WorkExperienceService.initializeAndSortWorkExperiences(language),
+                    WorkExperienceService.getWorkExperienceUIText(language)
+                ]);
+
+                // 準備表格行資料
                 appState.sortedRows = WorkExperienceService.prepareMainTableRows(parentExperiences);
+                appState.translations = translations;
 
                 // 建立 parent 資料索引
                 parentExperiences.forEach(exp => {
                     appState.parentExperiences[exp.id] = exp;
                 });
-
-                // 取得翻譯
-                const translations = getTranslations(language);
 
                 // 初始化表格
                 WorkExperienceTable.initialize({
@@ -218,6 +228,7 @@
             } catch (error) {
                 showLoading(false);
                 showError('載入工作經歷資料失敗', error.message);
+                console.error('❌ 詳細錯誤:', error);
             }
         }
 
@@ -261,6 +272,13 @@
         async function handleLanguageChange(language) {
             console.log(`🌐 語言切換為: ${language}`);
             appState.currentLanguage = language;
+            
+            // 使用 LanguageManager 更新語言（自動更新 URL 和 localStorage）
+            LanguageManager.setLanguage(language);
+            
+            // 清除舊語言的翻譯快取，準備加載新語言
+            WorkExperienceService.clearTranslationCache(language);
+            
             await loadWorkExperienceData(language);
         }
 
@@ -315,42 +333,13 @@
                 return;
             }
 
+            const errorText = appState.translations?.common?.error || '錯誤';
             errorContainer.innerHTML = `
                 <div class="error">
                     <div class="error-title">❌ ${title}</div>
                     <div>${message}</div>
                 </div>
             `;
-        }
-
-        /**
-         * 取得翻譯文本
-         * @param {string} language - 語言代碼
-         * @returns {Object} 翻譯物件
-         */
-        function getTranslations(language) {
-            const translations = {
-                'zh-TW': {
-                    title: '工作經歷',
-                    period: '期間',
-                    project: '專案/項目',
-                    role: '職務/內容'
-                },
-                'ja': {
-                    title: '職務経歴',
-                    period: '期間',
-                    project: 'プロジェクト/項目',
-                    role: '職務/内容'
-                },
-                'en': {
-                    title: 'Work Experience',
-                    period: 'Period',
-                    project: 'Project/Item',
-                    role: 'Role/Content'
-                }
-            };
-
-            return translations[language] || translations['zh-TW'];
         }
 
         // 頁面載入完成後初始化應用
