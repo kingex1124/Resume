@@ -73,6 +73,17 @@
         }
 
         /**
+         * 從 URL 參數中獲取 ID
+         * @returns {string|null} ID 或 null
+         */
+        function getIdFromUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+
+
+        /**
          * 初始化應用程式
          */
         async function initializeApp() {
@@ -116,6 +127,15 @@
 
                 showLoading(false);
                 console.log('✅ 應用程式初始化完成');
+
+                // 6. 檢查 URL 參數，如果有 ID 則自動打開對應的對話框
+                const autoOpenId = getIdFromUrlParams();
+                if (autoOpenId) {
+                    // 延遲執行，確保 DOM 已完全渲染
+                    setTimeout(() => {
+                        WorkExperienceService.autoOpenModalById(autoOpenId, appState);
+                    }, 100);
+                }
             } catch (error) {
                 showLoading(false);
                 showError('應用程式初始化失敗', error.message);

@@ -577,6 +577,58 @@ export class WorkExperienceService {
   }
 
   /**
+   * 根據 URL 參數中的 ID 自動打開對應的對話框
+   * @param {string} id - 要打開的 ID (parent ID 或 child ID)
+   * @param {Object} appState - 應用狀態
+   */
+  static autoOpenModalById(id, appState) {
+    if (!id || !appState.parentExperiences) {
+      console.warn('⚠️ 無效的 ID 或應用狀態');
+      return;
+    }
+
+    // 判斷是 parent 還是 child ID
+    const isParentId = this.isParentId(id);
+    const isChildId = this.isChildId(id);
+
+    if (isParentId) {
+      // 打開 Parent 對話框
+      const parentExp = appState.parentExperiences[id];
+      if (parentExp) {
+        const childProjects = this.getParentChildProjects(parentExp);
+        WorkExperienceModal.showParentModal(
+          parentExp,
+          childProjects,
+          (projectData) => {
+            WorkExperienceModal.showChildModal(projectData);
+          }
+        );
+        console.log(`✅ 自動打開 Parent 對話框: ${id}`);
+      } else {
+        console.warn(`⚠️ 找不到 ID 為 ${id} 的 Parent 數據`);
+      }
+    } else if (isChildId) {
+      // 打開 Child 對話框
+      const parentId = this.extractParentIdFromChildId(id);
+      const parentExp = appState.parentExperiences[parentId];
+      
+      if (parentExp && parentExp.projects) {
+        const childProject = parentExp.projects.find(p => p.id === id);
+        if (childProject) {
+          WorkExperienceModal.showChildModal(childProject);
+          console.log(`✅ 自動打開 Child 對話框: ${id}`);
+        } else {
+          console.warn(`⚠️ 在 Parent ${parentId} 中找不到 Child ID 為 ${id} 的數據`);
+        }
+      } else {
+        console.warn(`⚠️ 找不到 Parent ID 為 ${parentId} 的數據`);
+      }
+    } else {
+      console.warn(`⚠️ 無效的 ID 格式: ${id}`);
+    }
+  }
+
+  /**
    * 獲取一個簡化的事件處理器物件（用於 HTML 中傳遞）
    * @returns {Object} 事件處理器物件
    */
