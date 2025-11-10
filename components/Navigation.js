@@ -140,14 +140,18 @@ export class Navigation {
       // 初始化當前語言
       languageSelect.value = currentLanguage;
       
-      languageSelect.addEventListener('change', (e) => {
+      languageSelect.addEventListener('change', async (e) => {
         const selectedLanguage = e.target.value;
         console.log(`🌐 語言已切換為: ${selectedLanguage}`);
         
-        // 自動更新菜單語言（從 work-experience.json 載入翻譯）
+        // 1. 使用 LanguageManager 更新 URL 參數
+        const { LanguageManager } = await import('../i18n/LanguageManager.js');
+        LanguageManager.setLanguage(selectedLanguage);
+        
+        // 2. 自動更新菜單語言（從 work-experience.json 載入翻譯）
         Navigation._loadAndUpdateMenuByLanguage(selectedLanguage);
         
-        // 調用外部回調（如果提供）
+        // 3. 調用外部回調（如果提供）
         if (onLanguageChange) {
           onLanguageChange(selectedLanguage);
         }
@@ -377,13 +381,30 @@ export class Navigation {
    */
   static handleLogout() {
     console.log('🔓 用戶登出');
-    // 清除 localStorage 中的語言設置（可選）
+    
+    // 1. 清除認證資訊和 Cookie
+    // 動態導入 LoginService 確保登出功能正常
+    import('../services/LoginService.js').then(module => {
+      const { LoginService } = module;
+      LoginService.logout();
+    }).catch(error => {
+      console.error('❌ 登出失敗:', error);
+    });
+    
+    // 2. 清除 localStorage 中的語言設置（保持語言選擇）
+    // 注意：不需要清除 app_language，讓下次登入保持相同語言
+    
+    // 3. 清除其他可能的 localStorage 資料
     try {
-      localStorage.removeItem('app_language');
+      // 只清除應用相關的敏感資料，保留語言設置
+      // localStorage.removeItem('app_language'); // 可選，通常保留
     } catch (e) {
       console.warn('⚠️ 無法清除 localStorage');
     }
-    // 導航到首頁
-    window.location.href = 'index.html';
+    
+    // 4. 導航回首頁（1秒延遲確保 logout 完成）
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 100);
   }
 }

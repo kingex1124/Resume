@@ -172,6 +172,7 @@ export class AuthMiddleware {
     this._password = null;
     this._clearPasswordCookie();
     this._clearSessionTimeout();
+    console.log('✅ 認證狀態已清除');
   }
   
   /**
@@ -308,7 +309,15 @@ export class AuthMiddleware {
    */
   static _clearPasswordCookie() {
     try {
+      // 方法 1: 設定 max-age=0
       document.cookie = `${this._cookieName}=;max-age=0;path=/;samesite=strict`;
+      
+      // 方法 2: 設定過期日期為過去
+      document.cookie = `${this._cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+      
+      // 方法 3: 用各種路徑嘗試清除（以防多層路徑問題）
+      document.cookie = `${this._cookieName}=;max-age=0;path=/;`;
+      
       console.log('✅ Cookie 已清除');
     } catch (error) {
       console.error('❌ 無法清除 cookie:', error.message);
