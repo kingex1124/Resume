@@ -121,19 +121,6 @@ export class WorkExperienceTable {
   }
   
   /**
-   * 格式化期間顯示
-   * @param {Object} period - 期間物件
-   * @returns {string} HTML 字串
-   * @private
-   */
-  static _formatPeriod(period) {
-    if (!period) return '';
-    const { start, end, duration } = period;
-    const durationText = duration && duration.trim() ? ` (${duration})` : '';
-    return `<span class="period-date">${start}</span><br><span class="period-date">~</span><br><span class="period-date">${end}${durationText}</span>`;
-  }
-  
-  /**
    * 格式化多個期間顯示折行
    * @param {Array} periods - 期間陣列
    * @returns {string} HTML 字串
@@ -150,7 +137,7 @@ export class WorkExperienceTable {
       })
       .join('<br>');
   }
-  
+
   /**
    * 綁定表格行點擊事件
    * @param {Array} rows - 表格行資料
@@ -188,24 +175,6 @@ export class WorkExperienceTable {
   }
   
   /**
-   * 更新表格內容
-   * @param {Array} rows - 新的表格行資料
-   * @param {Object} translations - 翻譯文本
-   */
-  static updateTable(rows, translations = this._getDefaultTranslations()) {
-    const wrapper = document.querySelector('.work-experience-table-wrapper');
-    if (!wrapper) return;
-    
-    wrapper.innerHTML = this._buildTableHTML(rows, translations).replace(
-      '<div class=\"work-experience-table-wrapper\">',
-      ''
-    ).replace(
-      '</div>',
-      ''
-    );
-  }
-  
-  /**
    * 取得預設翻譯
    * @returns {Object} 翻譯文本
    * @private
@@ -217,17 +186,5 @@ export class WorkExperienceTable {
       project: '專案/項目',
       role: '職務/內容'
     };
-  }
-  
-  /**
-   * 設定表格樣式主題
-   * @param {string} theme - 主題名稱 light 或 dark
-   */
-  static setTheme(theme = 'light') {
-    const wrapper = document.querySelector('.work-experience-table-wrapper');
-    if (!wrapper) return;
-    
-    wrapper.classList.remove('theme-light', 'theme-dark');
-    wrapper.classList.add(`theme-${theme}`);
   }
 }

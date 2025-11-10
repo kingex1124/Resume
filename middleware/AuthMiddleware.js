@@ -219,41 +219,6 @@ export class AuthMiddleware {
   }
   
   /**
-   * 設定 session 持續時間
-   * @param {number} duration - 持續時間（毫秒）
-   */
-  static setSessionDuration(duration) {
-    this._sessionDuration = duration;
-    if (this._isAuthenticated) {
-      this._setSessionTimeout();
-    }
-  }
-  
-  /**
-   * 取得剩餘 session 時間
-   * @returns {number|null} 剩餘時間（毫秒）或 null
-   */
-  static getRemainingSessionTime() {
-    // 這是簡化版本，實際應該記錄開始時間並計算
-    return this._isAuthenticated ? this._sessionDuration : null;
-  }
-  
-  /**
-   * 驗證資料存取權限
-   * @param {string} section - 要存取的資料區段
-   * @returns {boolean} 是否有權限存取
-   */
-  static canAccess(section) {
-    if (!this._isAuthenticated) {
-      console.warn(`⚠️ 未授權存取: ${section}`);
-      return false;
-    }
-    
-    // 可以擴展為更複雜的權限檢查
-    return true;
-  }
-  
-  /**
    * 記錄使用者活動（用於延長 session）
    */
   static recordActivity() {

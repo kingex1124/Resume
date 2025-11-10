@@ -22,14 +22,12 @@ export class LoginComponent {
    * 初始化登入畫面
    * @param {Object} options - 配置選項
    * @param {string} options.containerId - 容器元素 ID（預設: 'loginScreen'）
-   * @param {string} options.defaultPassword - 預設密碼提示文字
    * @param {Function} options.onLogin - 登入成功回調函數 (password) => {}
    * @param {Function} options.onCancel - 取消登入回調函數
    */
   static async initialize(options = {}) {
     const {
       containerId = 'loginScreen',
-      defaultPassword = 'mySecurePassword123',
       onLogin = null,
       onCancel = null
     } = options;
@@ -37,7 +35,6 @@ export class LoginComponent {
     this.containerId = containerId;
     this.onLogin = onLogin;
     this.onCancel = onCancel;
-    this.defaultPassword = defaultPassword;
 
     // 1. 偵測語言（從 URL 獲取或使用預設）
     this.#currentLanguage = this._detectLanguageFromURL();
@@ -196,18 +193,6 @@ export class LoginComponent {
     if (errorMessage) {
       errorMessage.classList.remove('show');
       errorMessage.textContent = '';
-    }
-  }
-
-  /**
-   * 顯示/隱藏載入中狀態
-   * @param {boolean} show - 是否顯示載入狀態
-   */
-  static showLoading(show) {
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-      loginBtn.disabled = show;
-      loginBtn.textContent = show ? '解密中...' : '解鎖並檢視';
     }
   }
 

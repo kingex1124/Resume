@@ -230,15 +230,4 @@ export class LoginService {
   static isAuthenticatedLegacy() {
     return this.isAuthenticated();
   }
-  
-  /**
-   * 取得認證狀態文本
-   * @returns {string} 認證狀態描述
-   */
-  static getAuthStatusText() {
-    if (this.isAuthenticated()) {
-      return '已認證';
-    }
-    return '未認證';
-  }
 }
