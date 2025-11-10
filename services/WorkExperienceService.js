@@ -25,12 +25,6 @@ export class WorkExperienceService {
     translations: null
   };
 
-  // 事件回調引用（用於語言切換和其他事件）
-  static #eventCallbacks = {
-    onLanguageChange: null,
-    onTableRowClick: null
-  };
-
   // 加密資料快取（從 WorkExperienceRepository 加載）
   static #encryptedData = null;
 
@@ -341,35 +335,6 @@ export class WorkExperienceService {
     return `${start} ~ ${end} (${duration})`;
   }
   
-  /**
-   * 準備 Parent 詳情對話框資料
-   * @param {Object} parentExp - Parent 工作經歷物件
-   * @returns {Object} 對話框資料
-   */
-  static prepareParentModalData(parentExp) {
-    return {
-      title: parentExp.company.name,
-      period: this.formatPeriodText(parentExp.period),
-      workingDays: parentExp.workingDays,
-      summary: parentExp.summary,
-      projects: this._sortProjectsByEndDate(parentExp.projects || [])
-    };
-  }
-  
-  /**
-   * 準備 Child 專案詳情對話框資料
-   * @param {Object} project - Child 專案物件
-   * @returns {Object} 對話框資料
-   */
-  static prepareChildModalData(project) {
-    return {
-      title: project.name,
-      periods: this._formatMultiplePeriods(project.periods || []),
-      workingDays: project.details?.overview?.workingDays,
-      role: project.role,
-      content: project.details?.content || { sections: [] }
-    };
-  }
   
   /**
    * 格式化多個期間的顯示文本
@@ -385,34 +350,6 @@ export class WorkExperienceService {
       .join('\n');
   }
   
-  /**
-   * 格式化表格行的顯示資料
-   * @param {Object} rowData - 行資料 { type, data, parentId }
-   * @returns {Object} 格式化後的顯示資料
-   */
-  static formatTableRowDisplay(rowData) {
-    const { type, data } = rowData;
-    
-    if (type === 'parent') {
-      return {
-        type: 'parent',
-        period: this.formatPeriodText(data.period),
-        company: data.company.name,
-        summary: data.summary,
-        id: data.id
-      };
-    } else if (type === 'child') {
-      return {
-        type: 'child',
-        periods: this._formatMultiplePeriods(data.periods),
-        name: data.name,
-        role: data.role,
-        id: data.id
-      };
-    }
-    
-    return null;
-  }
   
   /**
    * 取得 Parent 工作經歷的所有 child 專案
@@ -694,38 +631,6 @@ export class WorkExperienceService {
     return { ...this.#appState };
   }
 
-  /**
-   * 取得父工作經歷物件（按 ID）
-   * @param {string} parentId - Parent ID
-   * @returns {Object|null} Parent 工作經歷物件或 null
-   */
-  static getParentExperienceById(parentId) {
-    return this.#appState.parentExperiences[parentId] || null;
-  }
-
-  /**
-   * 取得所有排序後的表格行
-   * @returns {Array} 排序後的行陣列
-   */
-  static getMainTableRows() {
-    return [...this.#appState.sortedRows];
-  }
-
-  /**
-   * 取得當前語言
-   * @returns {string} 語言代碼
-   */
-  static getCurrentLanguage() {
-    return this.#appState.currentLanguage;
-  }
-
-  /**
-   * 取得所有翻譯
-   * @returns {Object} 翻譯物件
-   */
-  static getTranslations() {
-    return { ...this.#appState.translations };
-  }
 
   /**
  * 顯示/隱藏載入中狀態
@@ -760,36 +665,6 @@ export class WorkExperienceService {
   // ============================================
   // 事件處理方法
   // ============================================
-
-  /**
-   * 設置事件回調
-   * @param {Object} callbacks - 回調物件
-   * @param {Function} callbacks.onLanguageChange - 語言切換回調
-   * @param {Function} callbacks.onTableRowClick - 表格行點擊回調
-   */
-  static setEventCallbacks(callbacks = {}) {
-    const { onLanguageChange, onTableRowClick } = callbacks;
-    
-    if (onLanguageChange) {
-      this.#eventCallbacks.onLanguageChange = onLanguageChange;
-    }
-    if (onTableRowClick) {
-      this.#eventCallbacks.onTableRowClick = onTableRowClick;
-    }
-    
-    console.log('✅ 事件回調已設置');
-  }
-
-  /**
-   * 獲取事件回調
-   * @returns {Object} 所有事件回調
-   */
-  static getEventCallbacks() {
-    return {
-      onLanguageChange: this.handleLanguageChange.bind(this),
-      onTableRowClick: this.handleTableRowClick.bind(this)
-    };
-  }
 
   /**
    * 表格行點擊事件處理
@@ -931,13 +806,4 @@ export class WorkExperienceService {
     }
   }
 
-  /**
-   * 獲取一個簡化的事件處理器物件（用於 HTML 中傳遞）
-   * @returns {Object} 事件處理器物件
-   */
-  static getSimplifiedHandlers() {
-    return {
-      onTableRowClick: this.handleTableRowClick.bind(this)
-    };
-  }
 }
