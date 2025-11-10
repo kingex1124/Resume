@@ -145,66 +145,6 @@ export class i18nService {
     }
   }
 
-  /**
-   * 取得巢狀翻譯鍵值
-   * @param {Object} translations - 翻譯物件
-   * @param {string} keyPath - 鍵路徑，使用點符號分隔 (例如: 'workExperience.modal.close')
-   * @param {string} fallback - 回退文本
-   * @returns {string} 翻譯文本
-   */
-  static getTranslationByPath(translations, keyPath, fallback = keyPath) {
-    const keys = keyPath.split('.');
-    let current = translations;
-
-    for (const key of keys) {
-      if (current && typeof current === 'object' && key in current) {
-        current = current[key];
-      } else {
-        console.warn(`⚠️ 翻譯鍵未找到: ${keyPath}，使用回退: ${fallback}`);
-        return fallback;
-      }
-    }
-
-    return typeof current === 'string' ? current : fallback;
-  }
-
-  /**
-   * 批量取得翻譯文本（使用鍵路徑陣列）
-   * @param {Object} translations - 翻譯物件
-   * @param {Array<string>} keyPaths - 鍵路徑陣列
-   * @returns {Object} { keyPath: translation, ... }
-   */
-  static getMultipleTranslations(translations, keyPaths) {
-    const result = {};
-    
-    for (const keyPath of keyPaths) {
-      result[keyPath] = this.getTranslationByPath(translations, keyPath);
-    }
-
-    return result;
-  }
-
-  /**
-   * 驗證翻譯物件的完整性
-   * @param {Object} translations - 翻譯物件
-   * @param {Array<string>} requiredKeys - 必需的鍵路徑陣列
-   * @returns {Object} { valid: boolean, missing: Array<string> }
-   */
-  static validateTranslations(translations, requiredKeys) {
-    const missing = [];
-
-    for (const keyPath of requiredKeys) {
-      const value = this.getTranslationByPath(translations, keyPath, null);
-      if (value === null || value === keyPath) {
-        missing.push(keyPath);
-      }
-    }
-
-    return {
-      valid: missing.length === 0,
-      missing
-    };
-  }
 
   /**
    * 格式化翻譯文本（支援簡單的變數替換）

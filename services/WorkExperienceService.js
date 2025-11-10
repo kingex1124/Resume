@@ -446,27 +446,6 @@ export class WorkExperienceService {
   }
 
   /**
-   * 取得特定翻譯文本（使用鍵路徑）
-   * @param {string} language - 語言代碼
-   * @param {string} keyPath - 鍵路徑 (例如: 'workExperience.modal.close')
-   * @param {string} fallback - 回退文本
-   * @returns {Promise<string>} 翻譯文本
-   */
-  static async getTranslationByPath(language, keyPath, fallback = keyPath) {
-    const translations = await this.loadWorkExperienceTranslations(language);
-    return i18nService.getTranslationByPath(translations, keyPath, fallback);
-  }
-
-  /**
-   * 批量取得工作經歷頁面的所有翻譯文本
-   * @param {string} language - 語言代碼
-   * @returns {Promise<Object>} 完整翻譯物件
-   */
-  static async getAllWorkExperienceTranslations(language) {
-    return this.loadWorkExperienceTranslations(language);
-  }
-
-  /**
    * 清除工作經歷翻譯快取
    * @param {string} language - 特定語言，如果為空則清除全部
    */
@@ -483,16 +462,6 @@ export class WorkExperienceService {
     }
   }
 
-  /**
-   * 獲取翻譯快取統計
-   * @returns {Object} 快取統計資訊
-   */
-  static getTranslationCacheStats() {
-    return {
-      cachedLanguages: Object.keys(this.#translationCache),
-      cacheSize: Object.keys(this.#translationCache).length
-    };
-  }
 
   // ============================================
   // 應用初始化相關方法
