@@ -39,7 +39,7 @@ export class Navigation {
     const navigationTranslations = await this.loadNavigationTranslations(currentLanguage);
     
     // 2. 使用翻譯資料生成菜單項目
-    const menuItems = this.getMenuItemsByLanguage(currentLanguage, navigationTranslations);
+    const menuItems = this.getMenuItemsByLanguage(navigationTranslations);
     
     // 3. 建立導覽欄 HTML
     container.innerHTML = this._buildNavHTML(menuItems, languages);
@@ -223,11 +223,10 @@ export class Navigation {
 
   /**
    * 根據語言取得菜單項目（多國語系版本）
-   * @param {string} language - 語言代碼
    * @param {Object} translations - 翻譯物件（來自 i18nService）
    * @returns {Array} 多國語系菜單項目
    */
-  static getMenuItemsByLanguage(language = 'zh-TW', translations = null) {
+  static getMenuItemsByLanguage(translations = null) {
     // 定義菜單結構（語言無關的 URL）
     const menuStructure = [
       { key: 'home', url: 'index.html' },
@@ -278,7 +277,7 @@ export class Navigation {
       navTranslations = await this.loadNavigationTranslations(language);
     }
 
-    const menuItems = this.getMenuItemsByLanguage(language, navTranslations);
+    const menuItems = this.getMenuItemsByLanguage(navTranslations);
     
     const navMenu = document.querySelector('.nav-menu');
     if (!navMenu) return;

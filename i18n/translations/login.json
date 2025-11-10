@@ -1,0 +1,41 @@
+{
+  "zh-TW": {
+    "login": {
+      "title": "個人履歷",
+      "subtitle": "此內容已加密保護，請輸入密碼以檢視",
+      "passwordLabel": "密碼",
+      "passwordPlaceholder": "請輸入密碼",
+      "unlockButton": "解鎖並檢視",
+      "decrypting": "解密中...",
+      "errorPasswordRequired": "請輸入密碼",
+      "errorLoginFailed": "登入失敗",
+      "errorMessage": "登入失敗: "
+    }
+  },
+  "ja": {
+    "login": {
+      "title": "個人履歴",
+      "subtitle": "このコンテンツは暗号化されています。パスワードを入力してください",
+      "passwordLabel": "パスワード",
+      "passwordPlaceholder": "パスワードを入力してください",
+      "unlockButton": "ロックを解除して表示",
+      "decrypting": "復号化中...",
+      "errorPasswordRequired": "パスワードを入力してください",
+      "errorLoginFailed": "ログインに失敗しました",
+      "errorMessage": "ログイン失敗: "
+    }
+  },
+  "en": {
+    "login": {
+      "title": "Personal Resume",
+      "subtitle": "This content is encrypted. Please enter your password to view",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Please enter your password",
+      "unlockButton": "Unlock and View",
+      "decrypting": "Decrypting...",
+      "errorPasswordRequired": "Please enter a password",
+      "errorLoginFailed": "Login failed",
+      "errorMessage": "Login failed: "
+    }
+  }
+}

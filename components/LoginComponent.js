@@ -1,10 +1,23 @@
 /**
  * Login Component
- * 登入畫面獨立元件，支援多頁面重用
+ * 登入畫面獨立元件，支援多頁面重用、多國語系
  * 套用 login-screen.css 樣式
+ * 
+ * 多國語系支援：
+ * - 從 URL 參數 ?lang=ja 獲取語言
+ * - 如無參數，預設使用中文 (zh-TW)
+ * - 支持語言：zh-TW, ja, en
  */
 
+import { i18nService } from '../services/i18nService.js';
+
 export class LoginComponent {
+  // 快取翻譯資料
+  static #translationCache = {};
+  
+  // 當前語言
+  static #currentLanguage = 'zh-TW';
+  
   /**
    * 初始化登入畫面
    * @param {Object} options - 配置選項
@@ -13,7 +26,7 @@ export class LoginComponent {
    * @param {Function} options.onLogin - 登入成功回調函數 (password) => {}
    * @param {Function} options.onCancel - 取消登入回調函數
    */
-  static initialize(options = {}) {
+  static async initialize(options = {}) {
     const {
       containerId = 'loginScreen',
       defaultPassword = 'mySecurePassword123',
@@ -26,50 +39,69 @@ export class LoginComponent {
     this.onCancel = onCancel;
     this.defaultPassword = defaultPassword;
 
-    // 建立登入畫面 HTML
-    this._buildLoginScreen();
-
-    // 綁定事件
-    this._bindEvents();
-    // 先隱藏起來。
-    this.hide();
+    // 1. 偵測語言（從 URL 獲取或使用預設）
+    this.#currentLanguage = this._detectLanguageFromURL();
     
-    console.log('✅ 登入組件初始化完成');
+    // 2. 初始化 i18nService
+    i18nService.initialize(this.#currentLanguage);
+    
+    // 3. 加載登入翻譯
+    const translations = await this._loadLoginTranslations(this.#currentLanguage);
+    
+    // 4. 建立登入畫面 HTML（使用翻譯）
+    this._buildLoginScreen(translations);
+
+    // 5. 綁定事件
+    this._bindEvents();
+    
+    console.log(`✅ 登入組件初始化完成 (語言: ${this.#currentLanguage})`);
   }
 
   /**
    * 建立登入畫面 HTML
+   * @param {Object} translations - 翻譯物件
    * @private
    */
-  static _buildLoginScreen() {
+  static _buildLoginScreen(translations = {}) {
     const container = document.getElementById(this.containerId);
     if (!container) {
       console.error(`❌ 找不到登入容器: ${this.containerId}`);
       return;
     }
 
+    // 取得翻譯文本（帶預設值）
+    const t = translations?.login || {};
+    const title = t.title || '個人履歷';
+    const subtitle = t.subtitle || '此內容已加密保護，請輸入密碼以檢視';
+    const passwordLabel = t.passwordLabel || '密碼';
+    const passwordPlaceholder = t.passwordPlaceholder || '請輸入密碼';
+    const unlockButton = t.unlockButton || '解鎖並檢視';
+
     container.innerHTML = `
       <div class="login-box">
         <div class="lock-icon">🔒</div>
-        <h1>個人履歷</h1>
-        <p>此內容已加密保護，請輸入密碼以檢視</p>
+        <h1>${title}</h1>
+        <p>${subtitle}</p>
         
         <div class="input-group">
-          <label for="passwordInput">密碼</label>
+          <label for="passwordInput">${passwordLabel}</label>
           <input 
             type="password" 
             id="passwordInput" 
-            placeholder="請輸入密碼"
+            placeholder="${passwordPlaceholder}"
             autocomplete="current-password"
           >
         </div>
         
-        <button class="btn" id="loginBtn">解鎖並檢視</button>
+        <button class="btn" id="loginBtn">${unlockButton}</button>
         
         <div class="error-message" id="errorMessage"></div>
         
       </div>
     `;
+    
+    // 儲存翻譯物件供後續使用
+    this._currentTranslations = translations;
   }
 
   /**
@@ -107,16 +139,21 @@ export class LoginComponent {
     if (!passwordInput) return;
 
     const password = passwordInput.value;
+    
+    // 取得翻譯文本
+    const t = this._currentTranslations?.login || {};
 
     if (!password) {
-      this.showError('請輸入密碼');
+      const errorText = t.errorPasswordRequired || '請輸入密碼';
+      this.showError(errorText);
       return;
     }
 
     // 顯示載入狀態
+    const decryptingText = t.decrypting || '解密中...';
     if (loginBtn) {
       loginBtn.disabled = true;
-      loginBtn.textContent = '解密中...';
+      loginBtn.textContent = decryptingText;
     }
     if (errorMessage) {
       errorMessage.classList.remove('show');
@@ -128,11 +165,13 @@ export class LoginComponent {
         await this.onLogin(password);
       }
     } catch (error) {
-      this.showError('登入失敗: ' + error.message);
+      const errorPrefix = t.errorMessage || '登入失敗: ';
+      this.showError(errorPrefix + error.message);
     } finally {
+      const unlockButtonText = t.unlockButton || '解鎖並檢視';
       if (loginBtn) {
         loginBtn.disabled = false;
-        loginBtn.textContent = '解鎖並檢視';
+        loginBtn.textContent = unlockButtonText;
       }
     }
   }
@@ -223,5 +262,84 @@ export class LoginComponent {
     if (passwordInput) {
       passwordInput.focus();
     }
+  }
+
+  // ============================================
+  // 私有方法 - 語言與翻譯
+  // ============================================
+
+  /**
+   * 從 URL 偵測語言
+   * 優先順序：URL 參數 ?lang=ja > 預設 zh-TW
+   * @returns {string} 語言代碼
+   * @private
+   */
+  static _detectLanguageFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const urlLanguage = params.get('lang');
+    
+    const supportedLanguages = ['zh-TW', 'ja', 'en'];
+    
+    if (urlLanguage && supportedLanguages.includes(urlLanguage)) {
+      console.log(`✅ 從 URL 偵測到語言: ${urlLanguage}`);
+      return urlLanguage;
+    }
+    
+    console.log('ℹ️ 未在 URL 找到語言參數，使用預設: zh-TW');
+    return 'zh-TW';
+  }
+
+  /**
+   * 加載登入翻譯
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 翻譯物件
+   * @private
+   */
+  static async _loadLoginTranslations(language) {
+    try {
+      const cacheKey = `login_${language}`;
+      
+      // 檢查快取
+      if (this.#translationCache[cacheKey]) {
+        console.log(`📦 使用快取翻譯: ${cacheKey}`);
+        return this.#translationCache[cacheKey];
+      }
+
+      // 從 i18nService 加載翻譯
+      const translations = await i18nService.loadModuleTranslations('login', language);
+      
+      // 快取翻譯資料
+      this.#translationCache[cacheKey] = translations;
+      console.log(`✅ 已加載登入翻譯: ${language}`);
+      
+      return translations;
+    } catch (error) {
+      console.error('❌ 加載登入翻譯失敗:', error.message);
+      // 返回空物件，會使用預設值
+      return {};
+    }
+  }
+
+  /**
+   * 設置語言（支援動態切換）
+   * @param {string} language - 語言代碼
+   */
+  static async setLanguage(language) {
+    const supportedLanguages = ['zh-TW', 'ja', 'en'];
+    
+    if (!supportedLanguages.includes(language)) {
+      console.error(`❌ 不支援的語言: ${language}`);
+      return;
+    }
+
+    this.#currentLanguage = language;
+    
+    // 加載新語言的翻譯
+    const translations = await this._loadLoginTranslations(language);
+    
+    // 重新建立 UI
+    this._buildLoginScreen(translations);
+    
+    console.log(`🌐 登入畫面語言已切換為: ${language}`);
   }
 }

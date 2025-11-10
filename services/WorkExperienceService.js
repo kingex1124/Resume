@@ -58,6 +58,11 @@ export class WorkExperienceService {
         onCancel: () => console.log('登入取消')
       });
 
+      const tableContainer = document.getElementById('work-experience-table');
+      if (tableContainer) {
+        LoginComponent.hide();
+      }
+      
       // 3. 只有加密資料才需要檢查 Cookie
       if (data.encrypted === true) {
         console.log('🔍 偵測到加密資料，先檢查 Cookie...');
