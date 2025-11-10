@@ -1,8 +1,10 @@
 /**
  * Work Experience Repository Layer
  * 負責從遠端或本地載入工作經歷資料
- * 未來將改為像 DataRepository 一樣讀取加密資料
+ * 使用 DataFormatValidator 進行資料格式驗證（支援加密/非加密資料）
  */
+
+import { DataFormatValidator } from '../components/DataFormatValidator.js';
 
 export class WorkExperienceRepository {
   /**
@@ -23,8 +25,14 @@ export class WorkExperienceRepository {
       
       const data = await response.json();
       
-      // 驗證資料格式
-      this._validateWorkExperienceData(data);
+      // 🔐 使用 DataFormatValidator 檢查是否為加密資料格式
+      if (DataFormatValidator.isEncryptedDataFormat(data)) {
+        console.log('🔐 偵測到加密資料格式，直接返回');
+        return data;
+      }
+      
+      // ✅ 非加密資料，使用 DataFormatValidator 驗證普通資料格式
+      DataFormatValidator.validateWorkExperienceData(data);
       
       console.log('✅ 工作經歷資料載入成功');
       return data;
@@ -53,27 +61,6 @@ export class WorkExperienceRepository {
     }
     
     return paths[language];
-  }
-  
-  /**
-   * 驗證工作經歷資料格式
-   * @param {Object} data - 工作經歷資料物件
-   * @private
-   */
-  static _validateWorkExperienceData(data) {
-    const requiredFields = ['version', 'lastUpdated', 'workExperiences'];
-    
-    for (const field of requiredFields) {
-      if (!(field in data)) {
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
-    
-    if (!Array.isArray(data.workExperiences)) {
-      throw new Error('workExperiences must be an array');
-    }
-    
-    console.log(`✅ 工作經歷資料格式驗證通過 (${data.workExperiences.length} 筆)`);
   }
   
   /**

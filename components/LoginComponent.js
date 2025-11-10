@@ -31,7 +31,9 @@ export class LoginComponent {
 
     // 綁定事件
     this._bindEvents();
-
+    // 先隱藏起來。
+    this.hide();
+    
     console.log('✅ 登入組件初始化完成');
   }
 
@@ -159,12 +161,25 @@ export class LoginComponent {
   }
 
   /**
+   * 顯示/隱藏載入中狀態
+   * @param {boolean} show - 是否顯示載入狀態
+   */
+  static showLoading(show) {
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+      loginBtn.disabled = show;
+      loginBtn.textContent = show ? '解密中...' : '解鎖並檢視';
+    }
+  }
+
+  /**
    * 顯示登入畫面
    */
   static show() {
     const container = document.getElementById(this.containerId);
     if (container) {
       container.style.display = 'flex';
+      container.classList.remove('hidden');
     }
   }
 
@@ -174,7 +189,9 @@ export class LoginComponent {
   static hide() {
     const container = document.getElementById(this.containerId);
     if (container) {
-      container.style.display = 'none';
+      container.classList.add('hidden');
+      // 使用 !important 確保覆蓋 CSS 中的 display: flex
+      container.style.display = 'none !important';
     }
   }
 

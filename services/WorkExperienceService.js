@@ -6,7 +6,12 @@
 
 import { WorkExperienceRepository } from '../repositories/WorkExperienceRepository.js';
 import { i18nService } from './i18nService.js';
+import { LoginService } from './LoginService.js';
 import { WorkExperienceModal } from '../components/WorkExperienceModal.js';
+import { LanguageManager } from '../i18n/LanguageManager.js';
+import { Navigation } from '../components/Navigation.js';
+import { WorkExperienceTable } from '../components/WorkExperienceTable.js';
+import { LoginComponent } from '../components/LoginComponent.js';
 
 export class WorkExperienceService {
   // 快取工作經歷翻譯資料
@@ -25,24 +30,205 @@ export class WorkExperienceService {
     onLanguageChange: null,
     onTableRowClick: null
   };
+
+  // 加密資料快取（從 WorkExperienceRepository 加載）
+  static #encryptedData = null;
+
   /**
    * 初始化並取得排序後的工作經歷資料
+   * 
+   * 流程：
+   * 1. 從 WorkExperienceRepository 載入資料（可能是加密或明文）
+   * 2. 初始化登入元件
+   * 3. 優先檢查 Cookie 還原會話 (如失敗 → 顯示登入)
+   * 4. 如果成功解密，綁定資料並返回排序後的工作經歷陣列
+   * 
    * @param {string} language - 語言代碼
    * @returns {Promise<Array>} 排序後的工作經歷陣列
    */
   static async initializeAndSortWorkExperiences(language = 'zh-TW') {
     try {
+      // 1. 從 WorkExperienceRepository 載入資料
       const data = await WorkExperienceRepository.loadWorkExperienceData(language);
-      const parentExps = WorkExperienceRepository.getParentWorkExperiences(data);
       
-      // 按期間開始時間排序（近到遠）
-      return this._sortByPeriodStart(parentExps);
+      // 存儲加密資料供後續使用
+      this.#encryptedData = data;
+      
+      console.log('📥 WorkExperienceRepository 已載入資料');
+
+      // 2. 初始化登入元件
+      LoginComponent.initialize({
+        containerId: 'loginScreen',
+        onLogin: (password) => this.handleLogin(password),
+        onCancel: () => console.log('登入取消')
+      });
+
+      // 3. 只有加密資料才需要檢查 Cookie
+      if (data.encrypted === true) {
+        console.log('🔍 偵測到加密資料，先檢查 Cookie...');
+        
+        // 優先嘗試從 Cookie 還原會話
+        const decryptResult = await this.tryRestoreSession();
+
+        if (decryptResult.success) {
+          console.log('✅ 會話已還原，資料已自動解密');
+          // 綁定資料
+          const parentExps = WorkExperienceRepository.getParentWorkExperiences(decryptResult.data);
+          await this._bindWorkExperienceData(parentExps);
+          return this._sortByPeriodStart(parentExps);
+        } else {
+          console.log('⚠️ Cookie 無效或已過期，顯示登入畫面');
+          // 沒有有效的 Cookie，顯示登入介面
+          LoginComponent.show();
+          return [];
+        }
+      } else {
+        // 非加密資料，直接使用
+        console.log('ℹ️ 非加密資料，直接載入');
+        const parentExps = WorkExperienceRepository.getParentWorkExperiences(data);
+        await this._bindWorkExperienceData(parentExps);
+        return this._sortByPeriodStart(parentExps);
+      }
     } catch (error) {
       console.error('❌ 初始化工作經歷資料失敗:', error.message);
       throw error;
     }
   }
-  
+
+  /**
+   * 登入按鈕點擊事件處理
+   * 使用密碼解密工作經歷資料
+   * 
+   * @param {string} password - 使用者輸入的密碼
+   */
+  static async handleLogin(password) {
+    try {
+      if (!this.#encryptedData) {
+        LoginComponent.showError('缺少加密資料，無法登入');
+        return;
+      }
+
+      console.log('🔐 開始登入流程...');
+
+      // 使用 LoginService 解密資料
+      const result = await LoginService.login(password, this.#encryptedData);
+
+      if (result.success) {
+        console.log('✅ 登入成功，資料已解密');
+        
+        // 提取 parent 工作經歷
+        const parentExps = WorkExperienceRepository.getParentWorkExperiences(result.data);
+        
+        // 使用共用方法綁定資料
+        await this._bindWorkExperienceData(parentExps);
+
+        console.log('✅ 工作經歷表格已更新');
+      } else {
+        LoginComponent.showError('❌ 密碼錯誤或資料損壞');
+        console.error('❌ 登入失敗:', result.message);
+      }
+    } catch (error) {
+      LoginComponent.showError('❌ 登入失敗: ' + error.message);
+      console.error('❌ 登入錯誤:', error);
+    }
+  }
+
+  /**
+   * 共用方法：綁定工作經歷資料到 UI
+   * 登入成功或會話還原時都需要執行此方法
+   * 
+   * @param {Array} parentExps - Parent 工作經歷陣列
+   * @private
+   */
+  static async _bindWorkExperienceData(parentExps) {
+    const sortedParentExps = this._sortByPeriodStart(parentExps);
+
+    // 1️⃣ 更新應用狀態
+    this.#appState.sortedRows = this.prepareMainTableRows(sortedParentExps);
+    this.#appState.parentExperiences = {};
+    sortedParentExps.forEach(exp => {
+      this.#appState.parentExperiences[exp.id] = exp;
+    });
+
+    // 2️⃣ 如果還沒有翻譯，加載翻譯
+    if (!this.#appState.translations) {
+      const translations = await this.getWorkExperienceUIText(this.#appState.currentLanguage);
+      this.#appState.translations = translations;
+    }
+
+    // 3️⃣ 隱藏登入介面
+    LoginComponent.hide();
+    const loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) {
+      loginScreen.style.display = 'none !important';
+      loginScreen.classList.add('hidden');
+    }
+    
+    // 4️⃣ 顯示主內容和導覽欄
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      mainContent.style.display = 'block';
+    }
+    
+    const navBar = document.getElementById('navigation');
+    if (navBar) {
+      navBar.style.display = 'block';
+    }
+
+    // 5️⃣ 渲染工作經歷表格
+    if (this.#appState.sortedRows.length > 0) {
+      WorkExperienceTable.initialize({
+        containerId: 'work-experience-table',
+        rows: this.#appState.sortedRows,
+        translations: this.#appState.translations || {},
+        onRowClick: this.handleTableRowClick.bind(this)
+      });
+    }
+  }
+
+  /**
+   * 嘗試從 Cookie 還原會話
+   * 檢查是否存在有效的認證 Cookie，如果有則自動解密
+   * 
+   * @returns {Promise<Object>} { success: boolean, data?: Object, message: string }
+   */
+  static async tryRestoreSession() {
+    try {
+      if (!this.#encryptedData) {
+        return {
+          success: false,
+          message: '缺少加密資料'
+        };
+      }
+
+      console.log('🔄 嘗試從 Cookie 還原會話...');
+
+      // 使用 LoginService 從 Cookie 還原會話
+      const result = await LoginService.restoreSession(this.#encryptedData);
+
+      if (result.success) {
+        console.log('✅ 會話已還原，使用者已認證');
+        return {
+          success: true,
+          data: result.data,
+          message: '會話已還原'
+        };
+      } else {
+        console.log('ℹ️ 無有效的會話 Cookie，需要重新登入');
+        return {
+          success: false,
+          message: '無有效會話'
+        };
+      }
+    } catch (error) {
+      console.error('❌ 還原會話失敗:', error.message);
+      return {
+        success: false,
+        message: error.message || '會話還原失敗'
+      };
+    }
+  }
+
   /**
    * 按期間開始時間排序工作經歷（近的在上）
    * @param {Array} experiences - 工作經歷陣列
@@ -377,37 +563,112 @@ export class WorkExperienceService {
 
   /**
    * 初始化應用狀態（從語言檢測開始）
+   * 
+   * 流程：
+   * 1. 初始化語言管理器
+   * 2. 初始化工作經歷資料和翻譯
+   * 3. 初始化 UI 元件（Navigation, Table, Modal）
+   * 4. 檢查 URL 參數並自動打開對應的模態框
+   * 
    * @param {string} language - 語言代碼
    * @returns {Promise<Object>} 應用狀態
    */
   static async initializeApp(language) {
     try {
-      this.#appState.currentLanguage = language;
+      // 1️⃣ 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
+      const detectedLanguage = LanguageManager.initialize();
+      const finalLanguage = detectedLanguage || language || 'zh-TW';
       
-      // 加載工作經歷資料
-      const sortedParentExps = await this.initializeAndSortWorkExperiences(language);
+      i18nService.initialize(finalLanguage);
+      this.#appState.currentLanguage = finalLanguage;
+
+      console.log(`🌐 應用語言已設置為: ${finalLanguage}`);
+
+      // 2️⃣ 加載工作經歷資料（支援加密/非加密）
+      const sortedParentExps = await this.initializeAndSortWorkExperiences(finalLanguage);
       
-      // 準備主列表行資料
+      // 3️⃣ 先初始化模態框（無論是否需要登入都需要）
+      WorkExperienceModal.initialize({
+        containerId: 'modal-container'
+      });
+
+      // 檢查是否需要等待登入
+      if (sortedParentExps.length === 0 && this.#encryptedData?.encrypted === true) {
+        console.log('⏳ 等待使用者登入...');
+        
+        // 預先加載翻譯以便登入後使用
+        const translations = await this.getWorkExperienceUIText(finalLanguage);
+        this.#appState.translations = translations;
+        
+        // 初始化導覽欄（會話還原或登入後需要）
+        Navigation.initialize({
+          containerId: 'navigation',
+          menuItems: Navigation.getMenuItemsByLanguage(finalLanguage, translations),
+          currentLanguage: finalLanguage,
+          onLanguageChange: (lang) => this.handleLanguageChange(lang),
+          onLogout: Navigation.handleLogout
+        });
+        
+        return this.#appState;
+      }
+
+      // 4️⃣ 準備主列表行資料
       const sortedRows = this.prepareMainTableRows(sortedParentExps);
       
-      // 加載 UI 翻譯
-      const translations = await this.getWorkExperienceUIText(language);
+      // 5️⃣ 加載 UI 翻譯
+      const translations = await this.getWorkExperienceUIText(finalLanguage);
       
-      // 構建 parent 資料索引
+      // 6️⃣ 構建 parent 資料索引
       const parentExperiences = {};
       sortedParentExps.forEach(exp => {
         parentExperiences[exp.id] = exp;
       });
       
-      // 更新應用狀態
+      // 7️⃣ 更新應用狀態
       this.#appState.sortedRows = sortedRows;
       this.#appState.parentExperiences = parentExperiences;
       this.#appState.translations = translations;
       
       console.log('✅ 應用狀態初始化完成');
+
+      // 8️⃣ 初始化導覽欄
+      Navigation.initialize({
+        containerId: 'navigation',
+        menuItems: Navigation.getMenuItemsByLanguage(finalLanguage, translations),
+        currentLanguage: finalLanguage,
+        onLanguageChange: (lang) => this.handleLanguageChange(lang),
+        onLogout: Navigation.handleLogout
+      });
+
+      // 9️⃣ 隱藏載入中狀態
+      this.showLoading(false);
+
+      // 🔟 渲染工作經歷表格
+      if (sortedRows.length > 0) {
+        WorkExperienceTable.initialize({
+          containerId: 'work-experience-table',
+          rows: sortedRows,
+          translations: translations,
+          onRowClick: this.handleTableRowClick.bind(this)
+        });
+      }
+
+      console.log('✅ 應用程式初始化完成');
+
+      // 1️⃣1️⃣ 檢查 URL 參數，如果有 ID 則自動打開對應的對話框
+      const params = new URLSearchParams(window.location.search);
+      const autoOpenId = params.get('id');
+      if (autoOpenId) {
+        // 延遲執行，確保 DOM 已完全渲染
+        setTimeout(() => {
+          this.autoOpenModalById(autoOpenId, this.#appState);
+        }, 100);
+      }
+
       return this.#appState;
     } catch (error) {
       console.error('❌ 應用初始化失敗:', error.message);
+      this.showError('初始化失敗', error.message);
       throw error;
     }
   }
@@ -466,6 +727,36 @@ export class WorkExperienceService {
     return { ...this.#appState.translations };
   }
 
+  /**
+ * 顯示/隱藏載入中狀態
+ */
+  static showLoading(show) {
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) {
+      loadingEl.style.display = show ? 'block' : 'none';
+    }
+  }
+
+  /**
+   * 顯示錯誤訊息
+   */
+  static showError(title = '', message = '') {
+    const errorContainer = document.getElementById('error-container');
+    if (!errorContainer) return;
+
+    if (!title && !message) {
+      errorContainer.innerHTML = '';
+      return;
+    }
+
+    errorContainer.innerHTML = `
+                <div class="error">
+                    <div class="error-title">❌ ${title}</div>
+                    <div>${message}</div>
+                </div>
+            `;
+  }
+
   // ============================================
   // 事件處理方法
   // ============================================
@@ -504,15 +795,25 @@ export class WorkExperienceService {
    * 表格行點擊事件處理
    * @param {Object} clickData - 點擊資料
    */
+  /**
+   * 表格行點擊事件處理
+   * @param {Object} clickData - 點擊資料 { type, id, data, index }
+   */
   static handleTableRowClick(clickData) {
     const appState = this.getAppState();
     const { type, id, data } = clickData;
 
+    console.log(`🔍 表格行點擊:`, { type, id, data });
+
     if (type === 'parent') {
-      const parentExp = appState.parentExperiences[id];
+      // data 是整個 rowData 物件 { type: 'parent', data: parentExpObject }
+      const parentExp = data.data || appState.parentExperiences[id];
+      
       if (parentExp) {
         const childProjects = this.getParentChildProjects(parentExp);
-        // 顯示 Parent 模態框，並綁定 child 專案點擊回調
+        console.log(`📊 顯示 Parent 對話框: ${parentExp.company.name}, 有 ${childProjects.length} 個子專案`);
+        
+        // 顯示 Parent 模態框（不需要傳遞回調，_bindChildProjectClickEvents 會直接調用 showChildModal）
         WorkExperienceModal.showParentModal(
           parentExp,
           childProjects,
@@ -521,45 +822,43 @@ export class WorkExperienceService {
             WorkExperienceModal.showChildModal(projectData);
           }
         );
+      } else {
+        console.warn(`⚠️ 找不到 Parent ID: ${id}`);
       }
     } else if (type === 'child') {
-      WorkExperienceModal.showChildModal(data.data);
+      // data 是整個 rowData 物件 { type: 'child', parentId: ..., data: projectObject }
+      const projectData = data.data;
+      
+      if (projectData) {
+        console.log(`📄 顯示 Child 對話框: ${projectData.name}`);
+        WorkExperienceModal.showChildModal(projectData);
+      } else {
+        console.warn(`⚠️ 找不到 Child 專案資料`);
+      }
     }
   }
 
   /**
    * 語言切換事件處理
    * @param {string} language - 新語言代碼
-   * @param {Object} handlers - 外部事件處理器物件
    */
-  static async handleLanguageChange(language, handlers = {}) {
-    const { 
-      LanguageManager, 
-      i18nService: i18nServiceRef,
-      WorkExperienceTable,
-      showLoading,
-      showError
-    } = handlers;
-
+  static async handleLanguageChange(language) {
     console.log(`🌐 語言切換為: ${language}`);
     
-    if (showLoading) showLoading(true);
+    this.showLoading(true);
     
     try {
-      // 更新 LanguageManager（自動更新 URL 和 localStorage）
-      if (LanguageManager) {
-        LanguageManager.setLanguage(language);
-      }
+      // 1. 更新 LanguageManager（自動更新 URL 和 localStorage）
+      LanguageManager.setLanguage(language);
       
-      if (i18nServiceRef) {
-        i18nServiceRef.setCurrentLanguage(language);
-      }
+      // 2. 更新 i18n Service
+      i18nService.setCurrentLanguage(language);
       
-      // 刷新應用資料
+      // 3. 刷新應用資料
       const appState = await this.refreshAppData(language);
       
-      // 重新渲染表格
-      if (WorkExperienceTable) {
+      // 4. 重新渲染表格
+      if (appState.sortedRows.length > 0) {
         WorkExperienceTable.initialize({
           containerId: 'work-experience-table',
           rows: appState.sortedRows,
@@ -568,10 +867,14 @@ export class WorkExperienceService {
         });
       }
       
-      if (showLoading) showLoading(false);
+      // 5. 更新導覽欄菜單
+      Navigation.updateMenuByLanguage(language, appState.translations);
+      
+      this.showLoading(false);
+      console.log('✅ 語言切換完成');
     } catch (error) {
-      if (showLoading) showLoading(false);
-      if (showError) showError('語言切換失敗', error.message);
+      this.showLoading(false);
+      this.showError('語言切換失敗', error.message);
       console.error('❌ 語言切換錯誤:', error);
     }
   }

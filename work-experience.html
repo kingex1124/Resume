@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>工作經歷 - 履歷系統</title>
     <link rel="stylesheet" href="./styles/base.css">
+    <link rel="stylesheet" href="./styles/login-screen.css">
     <link rel="stylesheet" href="./styles/navigation.css">
     <link rel="stylesheet" href="./styles/work-experience-table.css">
     <link rel="stylesheet" href="./styles/work-experience-modal.css">
     <link rel="stylesheet" href="./styles/work-experience.css">
 </head>
 <body>
+    <div id="loginScreen"></div>
     <!-- 導覽欄 -->
     <nav id="navigation"></nav>
 
@@ -35,53 +37,8 @@
 
     <!-- 載入應用程式 -->
     <script type="module">
-        import { Navigation } from './components/Navigation.js';
-        import { WorkExperienceTable } from './components/WorkExperienceTable.js';
-        import { WorkExperienceModal } from './components/WorkExperienceModal.js';
         import { WorkExperienceService } from './services/WorkExperienceService.js';
-        import { i18nService } from './services/i18nService.js';
         import { LanguageManager } from './i18n/LanguageManager.js';
-
-        /**
-         * 顯示/隱藏載入中狀態
-         */
-        function showLoading(show) {
-            const loadingEl = document.getElementById('loading');
-            if (loadingEl) {
-                loadingEl.style.display = show ? 'block' : 'none';
-            }
-        }
-
-        /**
-         * 顯示錯誤訊息
-         */
-        function showError(title = '', message = '') {
-            const errorContainer = document.getElementById('error-container');
-            if (!errorContainer) return;
-
-            if (!title && !message) {
-                errorContainer.innerHTML = '';
-                return;
-            }
-
-            errorContainer.innerHTML = `
-                <div class="error">
-                    <div class="error-title">❌ ${title}</div>
-                    <div>${message}</div>
-                </div>
-            `;
-        }
-
-        /**
-         * 從 URL 參數中獲取 ID
-         * @returns {string|null} ID 或 null
-         */
-        function getIdFromUrlParams() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('id');
-        }
-
-
 
         /**
          * 初始化應用程式
@@ -90,60 +47,29 @@
             console.log('🚀 初始化工作經歷頁面...');
             
             try {
-                // 1. 初始化語言管理器（自動寫入 URL）
+                // 1. 初始化語言管理器（自動從 URL 或 localStorage 讀取）
                 const language = LanguageManager.initialize();
-                i18nService.initialize(language);
-                
-                // 2. 初始化應用狀態
-                const appState = await WorkExperienceService.initializeApp(language);
-                
-                // 3. 初始化模態框
-                WorkExperienceModal.initialize({
-                    containerId: 'modal-container'
-                });
+                console.log(`📍 檢測到語言: ${language}`);
 
-                // 4. 初始化導覽欄
-                Navigation.initialize({
-                    containerId: 'navigation',
-                    menuItems: Navigation.getMenuItemsByLanguage(language, appState.translations),
-                    currentLanguage: language,
-                    onLanguageChange: (lang) => WorkExperienceService.handleLanguageChange(lang, {
-                        LanguageManager,
-                        i18nService,
-                        WorkExperienceTable,
-                        showLoading,
-                        showError
-                    }),
-                    onLogout: Navigation.handleLogout
-                });
+                // 2. 初始化應用狀態和加載資料
+                await WorkExperienceService.initializeApp(language);
 
-                // 5. 渲染工作經歷表格
-                WorkExperienceTable.initialize({
-                    containerId: 'work-experience-table',
-                    rows: appState.sortedRows,
-                    translations: appState.translations,
-                    onRowClick: WorkExperienceService.handleTableRowClick.bind(WorkExperienceService)
-                });
-
-                showLoading(false);
-                console.log('✅ 應用程式初始化完成');
-
-                // 6. 檢查 URL 參數，如果有 ID 則自動打開對應的對話框
-                const autoOpenId = getIdFromUrlParams();
-                if (autoOpenId) {
-                    // 延遲執行，確保 DOM 已完全渲染
-                    setTimeout(() => {
-                        WorkExperienceService.autoOpenModalById(autoOpenId, appState);
-                    }, 100);
-                }
+                console.log('✅ 工作經歷頁面初始化完成');
             } catch (error) {
-                showLoading(false);
-                showError('應用程式初始化失敗', error.message);
-                console.error('❌ 詳細錯誤:', error);
+                console.error('❌ 應用程式初始化失敗:', error);
+                const errorContainer = document.getElementById('error-container');
+                if (errorContainer) {
+                    errorContainer.innerHTML = `
+                        <div class="error">
+                            <div class="error-title">❌ 應用程式初始化失敗</div>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
             }
         }
 
-        // 應用啟動
+        // DOMContentLoaded 時初始化應用
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>

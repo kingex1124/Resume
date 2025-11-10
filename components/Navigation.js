@@ -166,6 +166,8 @@ export class Navigation {
         console.log('🔓 用戶點擊登出按鈕');
         if (confirm('確定要登出嗎？')) {
           Navigation.handleLogout();
+          const { LoginComponent } = import('../components/LoginComponent.js');
+          LoginComponent.show();
         }
       });
     }
@@ -379,32 +381,44 @@ export class Navigation {
   /**
    * 登出處理（靜態方法）
    */
-  static handleLogout() {
+  static async handleLogout() {
     console.log('🔓 用戶登出');
     
-    // 1. 清除認證資訊和 Cookie
-    // 動態導入 LoginService 確保登出功能正常
-    import('../services/LoginService.js').then(module => {
-      const { LoginService } = module;
-      LoginService.logout();
-    }).catch(error => {
-      console.error('❌ 登出失敗:', error);
-    });
-    
-    // 2. 清除 localStorage 中的語言設置（保持語言選擇）
-    // 注意：不需要清除 app_language，讓下次登入保持相同語言
-    
-    // 3. 清除其他可能的 localStorage 資料
     try {
-      // 只清除應用相關的敏感資料，保留語言設置
-      // localStorage.removeItem('app_language'); // 可選，通常保留
-    } catch (e) {
-      console.warn('⚠️ 無法清除 localStorage');
+      // 1. 清除認證資訊和 Cookie
+      const { LoginService } = await import('../services/LoginService.js');
+      LoginService.logout();
+      
+      console.log('✅ 登出完成');
+      
+      // 2. 隱藏主內容和導覽欄（只在 work-experience.html 有效）
+      const mainContent = document.querySelector('main');
+      const navBar = document.getElementById('navigation');
+      const loginScreen = document.getElementById('loginScreen');
+      
+      if (mainContent) {
+        mainContent.style.display = 'none';
+      }
+      
+      if (navBar) {
+        navBar.style.display = 'none';
+      }
+      
+      // 3. 顯示登入畫面
+      if (loginScreen) {
+        loginScreen.style.display = 'flex';
+        loginScreen.classList.remove('hidden');
+      }
+      
+      // 4. 重置表格內容
+      const tableContainer = document.getElementById('work-experience-table');
+      if (tableContainer) {
+        tableContainer.innerHTML = '';
+      }
+      
+      console.log('✅ 頁面已回到登入畫面');
+    } catch (error) {
+      console.error('❌ 登出失敗:', error);
     }
-    
-    // 4. 導航回首頁（1秒延遲確保 logout 完成）
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 100);
   }
 }

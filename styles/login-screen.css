@@ -251,27 +251,25 @@
    隱藏主內容（登入時）
    ============================================ */
 
-#loginScreen + nav,
-#loginScreen + nav + main,
-#loginScreen + nav + main + div,
-#loginScreen + nav + main + div + footer {
-    display: none;
+/* 當登入畫面顯示時，隱藏其他內容（但保持模態框容器可見） */
+#loginScreen:not(.hidden) ~ nav,
+#loginScreen:not(.hidden) ~ main,
+#loginScreen:not(.hidden) ~ footer {
+    display: none !important;
 }
 
-/* 使用更通用的選擇器確保隱藏 */
-body > nav[id="navigation"] {
-    display: none;
-}
-
-body > main {
-    display: none;
+/* 當登入畫面隱藏時，確保導航欄和主內容可見 */
+#loginScreen.hidden ~ nav,
+#loginScreen.hidden ~ main {
+    display: block !important;
 }
 
 body > footer {
     display: none;
 }
 
-body > div:not(#loginScreen) {
+/* 隱藏除了 loginScreen 和 modal-container 以外的 div */
+body > div:not(#loginScreen):not(#modal-container) {
     display: none;
 }
 
@@ -283,4 +281,13 @@ body > div:not(#loginScreen) {
     #loginScreen {
         display: none !important;
     }
+}
+
+/* ============================================
+   隱藏狀態
+   ============================================ */
+
+#loginScreen.hidden {
+    display: none !important;
+    visibility: hidden !important;
 }
