@@ -161,13 +161,30 @@ export class Navigation {
     // 登出按鈕事件
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', (e) => {
+      logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         console.log('🔓 用戶點擊登出按鈕');
-        if (confirm('確定要登出嗎？')) {
-          Navigation.handleLogout();
-          const { LoginComponent } = import('../components/LoginComponent.js');
-          LoginComponent.show();
+        if (!confirm('確定要登出嗎？')) return;
+
+        try {
+          // 優先使用外部傳入的回調 onLogout（若有），否則使用內部的 Navigation.handleLogout
+          if (typeof onLogout === 'function') {
+            await onLogout('');
+          } else if (typeof Navigation.handleLogout === 'function') {
+            await Navigation.handleLogout('');
+          }
+        } catch (err) {
+          console.error('❌ 登出回調發生錯誤:', err);
+        }
+
+        // 顯示登入元件讓使用者重新登入
+        try {
+          const { LoginComponent } = await import('../components/LoginComponent.js');
+          if (LoginComponent && typeof LoginComponent.show === 'function') {
+            LoginComponent.show();
+          }
+        } catch (e) {
+          // 忽略動態 import 錯誤（呼叫端可自行處理）
         }
       });
     }
@@ -380,8 +397,10 @@ export class Navigation {
 
   /**
    * 登出處理（靜態方法）
+   * 
+   * @param {string} tableContainerId - 工作經歷表格容器 ID（可選，預設為 'work-experience-table'）
    */
-  static async handleLogout() {
+  static async handleLogout(tableContainerId = 'work-experience-table') {
     console.log('🔓 用戶登出');
     
     try {
@@ -410,10 +429,11 @@ export class Navigation {
         loginScreen.classList.remove('hidden');
       }
       
-      // 4. 重置表格內容
-      const tableContainer = document.getElementById('work-experience-table');
+      // 4. 重置表格內容（如果容器存在）
+      const tableContainer = document.getElementById(tableContainerId);
       if (tableContainer) {
         tableContainer.innerHTML = '';
+        console.log('✅ Data 清空');
       }
       
       console.log('✅ 頁面已回到登入畫面');

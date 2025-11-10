@@ -512,7 +512,7 @@ export class WorkExperienceService {
           menuItems: Navigation.getMenuItemsByLanguage(finalLanguage, translations),
           currentLanguage: finalLanguage,
           onLanguageChange: (lang) => this.handleLanguageChange(lang),
-          onLogout: Navigation.handleLogout
+          onLogout: async () => await Navigation.handleLogout('work-experience-table')
         });
         
         return this.#appState;
@@ -543,7 +543,7 @@ export class WorkExperienceService {
         menuItems: Navigation.getMenuItemsByLanguage(finalLanguage, translations),
         currentLanguage: finalLanguage,
         onLanguageChange: (lang) => this.handleLanguageChange(lang),
-        onLogout: Navigation.handleLogout
+        onLogout: async () => await Navigation.handleLogout('work-experience-table')
       });
 
       // 9️⃣ 隱藏載入中狀態
