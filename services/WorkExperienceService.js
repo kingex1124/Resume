@@ -12,6 +12,7 @@ import { LanguageManager } from '../i18n/LanguageManager.js';
 import { Navigation } from '../components/Navigation.js';
 import { WorkExperienceTable } from '../components/WorkExperienceTable.js';
 import { LoginComponent } from '../components/LoginComponent.js';
+import { LoadingAndErrorComponent } from '../components/LoadingAndErrorComponent.js';
 
 export class WorkExperienceService {
   // 快取工作經歷翻譯資料
@@ -325,17 +326,6 @@ export class WorkExperienceService {
   }
   
   /**
-   * 格式化期間顯示文本
-   * @param {Object} period - 期間物件 { start, end, duration }
-   * @returns {string} 格式化文本 e.g., "2025.3 ~ 2025.8 (5個月)"
-   */
-  static formatPeriodText(period) {
-    if (!period) return '';
-    const { start, end, duration } = period;
-    return `${start} ~ ${end} (${duration})`;
-  }
-  
-  /**
    * 取得 Parent 工作經歷的所有 child 專案
    * @param {Object} parentExp - Parent 工作經歷物件
    * @returns {Array} 排序後的 child 專案陣列
@@ -510,7 +500,7 @@ export class WorkExperienceService {
       });
 
       // 9️⃣ 隱藏載入中狀態
-      this.showLoading(false);
+      LoadingAndErrorComponent.hideLoading();
 
       // 🔟 渲染工作經歷表格
       if (sortedRows.length > 0) {
@@ -537,7 +527,7 @@ export class WorkExperienceService {
       return this.#appState;
     } catch (error) {
       console.error('❌ 應用初始化失敗:', error.message);
-      this.showError('初始化失敗', error.message);
+      LoadingAndErrorComponent.showError('初始化失敗', error.message);
       throw error;
     }
   }
@@ -563,36 +553,6 @@ export class WorkExperienceService {
     return { ...this.#appState };
   }
 
-
-  /**
- * 顯示/隱藏載入中狀態
- */
-  static showLoading(show) {
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) {
-      loadingEl.style.display = show ? 'block' : 'none';
-    }
-  }
-
-  /**
-   * 顯示錯誤訊息
-   */
-  static showError(title = '', message = '') {
-    const errorContainer = document.getElementById('error-container');
-    if (!errorContainer) return;
-
-    if (!title && !message) {
-      errorContainer.innerHTML = '';
-      return;
-    }
-
-    errorContainer.innerHTML = `
-                <div class="error">
-                    <div class="error-title">❌ ${title}</div>
-                    <div>${message}</div>
-                </div>
-            `;
-  }
 
   // ============================================
   // 事件處理方法
@@ -652,7 +612,7 @@ export class WorkExperienceService {
   static async handleLanguageChange(language) {
     console.log(`🌐 語言切換為: ${language}`);
     
-    this.showLoading(true);
+    LoadingAndErrorComponent.showLoading(true);
     
     try {
       // 1. 更新 LanguageManager（自動更新 URL 和 localStorage）
@@ -677,11 +637,11 @@ export class WorkExperienceService {
       // 5. 更新導覽欄菜單（Navigation 會自動載入正確的翻譯）
       Navigation.updateMenuByLanguage(language);
       
-      this.showLoading(false);
+      LoadingAndErrorComponent.hideLoading();
       console.log('✅ 語言切換完成');
     } catch (error) {
-      this.showLoading(false);
-      this.showError('語言切換失敗', error.message);
+      LoadingAndErrorComponent.hideLoading();
+      LoadingAndErrorComponent.showError('語言切換失敗', error.message);
       console.error('❌ 語言切換錯誤:', error);
     }
   }
@@ -737,5 +697,4 @@ export class WorkExperienceService {
       console.warn(`⚠️ 無效的 ID 格式: ${id}`);
     }
   }
-
 }
