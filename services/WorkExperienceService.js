@@ -335,22 +335,6 @@ export class WorkExperienceService {
     return `${start} ~ ${end} (${duration})`;
   }
   
-  
-  /**
-   * 格式化多個期間的顯示文本
-   * @param {Array} periods - 期間陣列
-   * @returns {string} 格式化文本，多筆時折行顯示
-   * @private
-   */
-  static _formatMultiplePeriods(periods) {
-    if (!periods || periods.length === 0) return '';
-    
-    return periods
-      .map(period => this.formatPeriodText(period))
-      .join('\n');
-  }
-  
-  
   /**
    * 取得 Parent 工作經歷的所有 child 專案
    * @param {Object} parentExp - Parent 工作經歷物件
@@ -440,7 +424,6 @@ export class WorkExperienceService {
       role: translations?.workExperience?.role || '職務/內容',
       workingDays: translations?.workExperience?.workingDays || '工作天數',
       modal: translations?.workExperience?.modal || {},
-      navigation: translations?.navigation || {},
       common: translations?.common || {}
     };
   }
@@ -498,31 +481,12 @@ export class WorkExperienceService {
         containerId: 'modal-container'
       });
 
-      // 檢查是否需要等待登入
-      if (sortedParentExps.length === 0 && this.#encryptedData?.encrypted === true) {
-        console.log('⏳ 等待使用者登入...');
-        
-        // 預先加載翻譯以便登入後使用
-        const translations = await this.getWorkExperienceUIText(finalLanguage);
-        this.#appState.translations = translations;
-        
-        // 初始化導覽欄（會話還原或登入後需要）
-        Navigation.initialize({
-          containerId: 'navigation',
-          menuItems: Navigation.getMenuItemsByLanguage(finalLanguage, translations),
-          currentLanguage: finalLanguage,
-          onLanguageChange: (lang) => this.handleLanguageChange(lang),
-          onLogout: async () => await Navigation.handleLogout('work-experience-table')
-        });
-        
-        return this.#appState;
-      }
-
       // 4️⃣ 準備主列表行資料
       const sortedRows = this.prepareMainTableRows(sortedParentExps);
       
       // 5️⃣ 加載 UI 翻譯
       const translations = await this.getWorkExperienceUIText(finalLanguage);
+      this.#appState.translations = translations;
       
       // 6️⃣ 構建 parent 資料索引
       const parentExperiences = {};
@@ -540,7 +504,6 @@ export class WorkExperienceService {
       // 8️⃣ 初始化導覽欄
       Navigation.initialize({
         containerId: 'navigation',
-        menuItems: Navigation.getMenuItemsByLanguage(finalLanguage, translations),
         currentLanguage: finalLanguage,
         onLanguageChange: (lang) => this.handleLanguageChange(lang),
         onLogout: async () => await Navigation.handleLogout('work-experience-table')
@@ -711,8 +674,8 @@ export class WorkExperienceService {
         });
       }
       
-      // 5. 更新導覽欄菜單
-      Navigation.updateMenuByLanguage(language, appState.translations);
+      // 5. 更新導覽欄菜單（Navigation 會自動載入正確的翻譯）
+      Navigation.updateMenuByLanguage(language);
       
       this.showLoading(false);
       console.log('✅ 語言切換完成');

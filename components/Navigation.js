@@ -3,6 +3,8 @@
  * 共用導覽欄元件：包含登出按鈕、導覽菜單、語系切換下拉選單
  */
 
+import { i18nService } from '../services/i18nService.js';
+
 export class Navigation {
   /**
    * 初始化導覽欄
@@ -13,12 +15,10 @@ export class Navigation {
    * @param {string} options.currentLanguage - 當前語言
    * @param {Function} options.onLanguageChange - 語言切換回調函數
    * @param {Function} options.onLogout - 登出回調函數
-   * @param {Function} options.onMenuClick - 菜單點擊回調函數
    */
-  static initialize(options = {}) {
+  static async initialize(options = {}) {
     const {
       containerId = 'navigation',
-      menuItems = this._getDefaultMenuItems(),
       languages = [
         { code: 'zh-TW', name: '中文' },
         { code: 'ja', name: '日本語' },
@@ -26,8 +26,7 @@ export class Navigation {
       ],
       currentLanguage = 'zh-TW',
       onLanguageChange = null,
-      onLogout = null,
-      onMenuClick = null
+      onLogout = null
     } = options;
     
     const container = document.getElementById(containerId);
@@ -36,16 +35,22 @@ export class Navigation {
       return;
     }
     
-    // 建立導覽欄 HTML
+    // 1. 自動從 i18nService 載入導覽列翻譯
+    const navigationTranslations = await this.loadNavigationTranslations(currentLanguage);
+    
+    // 2. 使用翻譯資料生成菜單項目
+    const menuItems = this.getMenuItemsByLanguage(currentLanguage, navigationTranslations);
+    
+    // 3. 建立導覽欄 HTML
     container.innerHTML = this._buildNavHTML(menuItems, languages);
     
-    // 綁定事件
+    // 4. 綁定事件
     this._bindEvents({
       languages,
       currentLanguage,
       onLanguageChange,
       onLogout,
-      onMenuClick
+      translations: navigationTranslations
     });
     
     console.log('✅ 導覽欄初始化完成');
@@ -90,13 +95,13 @@ export class Navigation {
           <!-- Right Section: Language Selector & Logout -->
           <div class="nav-right">
             <div class="language-selector">
-              <label for="language-select" class="language-label">語言:</label>
+              <label for="language-select" class="language-label" data-i18n-key="navigation.language">語言:</label>
               <select id="language-select" class="language-dropdown">
                 ${languageOptionsHTML}
               </select>
             </div>
             
-            <button id="logout-btn" class="logout-button">登出</button>
+            <button id="logout-btn" class="logout-button" data-i18n-key="navigation.logout">登出</button>
           </div>
         </div>
       </nav>
@@ -109,7 +114,12 @@ export class Navigation {
    * @private
    */
   static _bindEvents(callbacks) {
-    const { languages, currentLanguage, onLanguageChange, onLogout, onMenuClick } = callbacks;
+    const { languages, currentLanguage, onLanguageChange, onLogout, translations } = callbacks;
+    
+    // 初始化時更新 i18n 元素
+    if (translations && translations.navigation) {
+      this._updateI18nElements(translations);
+    }
     
     // 漢堡菜單按鈕事件（手機版）
     const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -148,8 +158,9 @@ export class Navigation {
         const { LanguageManager } = await import('../i18n/LanguageManager.js');
         LanguageManager.setLanguage(selectedLanguage);
         
-        // 2. 自動更新菜單語言（從 work-experience.json 載入翻譯）
-        Navigation._loadAndUpdateMenuByLanguage(selectedLanguage);
+        // 2. 自動更新菜單語言（從 i18nService 載入翻譯）
+        const translations = await this.loadNavigationTranslations(selectedLanguage);
+        this.updateMenuByLanguage(selectedLanguage, translations);
         
         // 3. 調用外部回調（如果提供）
         if (onLanguageChange) {
@@ -164,14 +175,17 @@ export class Navigation {
       logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         console.log('🔓 用戶點擊登出按鈕');
-        if (!confirm('確定要登出嗎？')) return;
+        
+        // 獲取翻譯的確認訊息
+        const confirmMessage = translations?.navigation?.confirmLogout || '確定要登出嗎？';
+        if (!confirm(confirmMessage)) return;
 
         try {
           // 優先使用外部傳入的回調 onLogout（若有），否則使用內部的 Navigation.handleLogout
           if (typeof onLogout === 'function') {
-            await onLogout('');
+            await onLogout('work-experience-table');
           } else if (typeof Navigation.handleLogout === 'function') {
-            await Navigation.handleLogout('');
+            await Navigation.handleLogout('work-experience-table');
           }
         } catch (err) {
           console.error('❌ 登出回調發生錯誤:', err);
@@ -206,24 +220,11 @@ export class Navigation {
       });
     }
   }
-  
-  /**
-   * 取得預設菜單項目（中文硬編碼版，已棄用 - 使用 getMenuItemsByLanguage 代替）
-   * @returns {Array} 預設菜單項目
-   * @private
-   */
-  static _getDefaultMenuItems() {
-    return [
-      { label: '首頁', url: 'index.html' },
-      { label: '履歷表', url: 'portfolio.html' },
-      { label: '工作經歷', url: 'work-experience.html' }
-    ];
-  }
 
   /**
    * 根據語言取得菜單項目（多國語系版本）
    * @param {string} language - 語言代碼
-   * @param {Object} translations - 翻譯物件（來自 work-experience.json 或 navigation.json）
+   * @param {Object} translations - 翻譯物件（來自 i18nService）
    * @returns {Array} 多國語系菜單項目
    */
   static getMenuItemsByLanguage(language = 'zh-TW', translations = null) {
@@ -234,7 +235,7 @@ export class Navigation {
       { key: 'portfolio', url: 'portfolio.html' }
     ];
 
-    // 如果提供了翻譯物件，使用翻譯
+    // 優先使用提供的翻譯物件
     if (translations && translations.navigation) {
       return menuStructure.map(item => ({
         label: translations.navigation[item.key] || item.key,
@@ -242,28 +243,42 @@ export class Navigation {
       }));
     }
 
-    // 預設多國文本（備用）
-    const defaultLabels = {
-      'zh-TW': { home: '首頁', workExperience: '工作經歷', portfolio: '作品集' },
-      'ja': { home: 'ホーム', workExperience: '職務経歴', portfolio: 'ポートフォリオ' },
-      'en': { home: 'Home', workExperience: 'Work Experience', portfolio: 'Portfolio' }
-    };
-
-    const labels = defaultLabels[language] || defaultLabels['zh-TW'];
-
+    // 如果無翻譯，返回空標籤（應由 loadNavigationTranslations 提供）
     return menuStructure.map(item => ({
-      label: labels[item.key],
+      label: item.key,
       url: item.url
     }));
   }
 
   /**
+   * 加載導覽列翻譯（直接從 i18nService）
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 導覽列翻譯物件
+   */
+  static async loadNavigationTranslations(language) {
+    try {
+      const translations = await i18nService.loadModuleTranslations('navigation', language);
+      console.log(`✅ 已載入導覽列翻譯: ${language}`, translations);
+      return translations;
+    } catch (error) {
+      console.error('❌ 載入導覽列翻譯失敗:', error.message);
+      return null;
+    }
+  }
+
+  /**
    * 用翻譯更新菜單（當語言切換時調用）
    * @param {string} language - 新語言代碼
-   * @param {Object} translations - 翻譯物件
+   * @param {Object} translations - 翻譯物件（可選，若不提供則自動載入）
    */
-  static updateMenuByLanguage(language, translations = null) {
-    const menuItems = this.getMenuItemsByLanguage(language, translations);
+  static async updateMenuByLanguage(language, translations = null) {
+    // 如果沒有提供翻譯，自動載入
+    let navTranslations = translations;
+    if (!navTranslations) {
+      navTranslations = await this.loadNavigationTranslations(language);
+    }
+
+    const menuItems = this.getMenuItemsByLanguage(language, navTranslations);
     
     const navMenu = document.querySelector('.nav-menu');
     if (!navMenu) return;
@@ -276,6 +291,11 @@ export class Navigation {
 
     // 重新綁定菜單點擊事件
     this._bindMenuClickEvents();
+
+    // 更新 i18n 元素（語言標籤、登出按鈕）
+    if (navTranslations && navTranslations.navigation) {
+      this._updateI18nElements(navTranslations);
+    }
 
     console.log(`✅ 菜單已用 ${language} 語言更新`);
   }
@@ -302,48 +322,28 @@ export class Navigation {
   }
 
   /**
-   * 從 JSON 檔案載入翻譯並更新菜單（私有方法）
-   * @param {string} language - 語言代碼
+   * 更新 i18n 元素的文字（語言標籤、登出按鈕等）
+   * @param {Object} translations - 翻譯物件
    * @private
    */
-  static async _loadAndUpdateMenuByLanguage(language) {
+  static _updateI18nElements(translations) {
     try {
-      const response = await fetch('./i18n/translations/navigation.json');
-      const translations = await response.json();
-      
-      if (translations && translations[language]) {
-        this.updateMenuByLanguage(language, translations[language]);
-      } else {
-        console.warn(`⚠️ 找不到 ${language} 的菜單翻譯，使用預設`);
-        this.updateMenuByLanguage(language, null);
+      // 更新語言標籤
+      const languageLabel = document.querySelector('.language-label');
+      if (languageLabel && translations.navigation?.language) {
+        languageLabel.textContent = translations.navigation.language + ':';
       }
-    } catch (error) {
-      console.error('❌ 載入菜單翻譯失敗:', error);
-      this.updateMenuByLanguage(language, null);
+
+      // 更新登出按鈕
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn && translations.navigation?.logout) {
+        logoutBtn.textContent = translations.navigation.logout;
+      }
+
+      console.log('✅ i18n 元素已更新');
+    } catch (err) {
+      console.error('❌ _updateI18nElements 發生錯誤:', err);
     }
-  }
-  
-  /**
-   * 設定當前選中的語言
-   * @param {string} languageCode - 語言代碼
-   */
-  static setCurrentLanguage(languageCode) {
-    const languageSelect = document.getElementById('language-select');
-    if (languageSelect) {
-      languageSelect.value = languageCode;
-    }
-  }
-  
-  /**
-   * 取得當前選中的語言
-   * @returns {string} 語言代碼
-   */
-  static getCurrentLanguage() {
-    const languageSelect = document.getElementById('language-select');
-    if (languageSelect) {
-      return languageSelect.value;
-    }
-    return 'zh-TW';
   }
   
   /**
@@ -359,21 +359,6 @@ export class Navigation {
         item.classList.remove('active');
       }
     });
-  }
-  
-  /**
-   * 更新菜單項目
-   * @param {Array} menuItems - 新的菜單項目陣列
-   */
-  static updateMenuItems(menuItems) {
-    const navMenu = document.querySelector('.nav-menu');
-    if (!navMenu) return;
-    
-    const menuItemsHTML = menuItems
-      .map((item, idx) => `<a href="#" class="nav-menu-item" data-menu-id="${idx}">${item.label}</a>`)
-      .join('');
-    
-    navMenu.innerHTML = menuItemsHTML;
   }
 
   // ============================================
