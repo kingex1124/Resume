@@ -3,7 +3,7 @@
     "navigation": {
       "home": "首頁",
       "workExperience": "工作經歷",
-      "portfolio": "作品集",
+      "portfolio": "履歷表",
       "logout": "登出",
       "language": "語言",
       "confirmLogout": "確定要登出嗎？"
@@ -13,7 +13,7 @@
     "navigation": {
       "home": "ホーム",
       "workExperience": "職務経歴",
-      "portfolio": "ポートフォリオ",
+      "portfolio": "履歴書",
       "logout": "ログアウト",
       "language": "言語",
       "confirmLogout": "ログアウトしてもよろしいですか？"
@@ -23,7 +23,7 @@
     "navigation": {
       "home": "Home",
       "workExperience": "Work Experience",
-      "portfolio": "Portfolio",
+      "portfolio": "Resume",
       "logout": "Logout",
       "language": "Language",
       "confirmLogout": "Are you sure you want to logout?"

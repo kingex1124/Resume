@@ -230,8 +230,8 @@ export class Navigation {
     // 定義菜單結構（語言無關的 URL）
     const menuStructure = [
       { key: 'home', url: 'index.html' },
-      { key: 'workExperience', url: 'work-experience.html' },
-      { key: 'portfolio', url: 'portfolio.html' }
+      { key: 'portfolio', url: 'portfolio.html' },
+      { key: 'workExperience', url: 'work-experience.html' }
     ];
 
     // 優先使用提供的翻譯物件
