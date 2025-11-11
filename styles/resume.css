@@ -1,0 +1,493 @@
+/**
+ * Resume Page Styles
+ * 履歷表頁面專用樣式
+ */
+
+/* ============================================
+   主容器與頁面結構
+   ============================================ */
+
+#resume-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  display: block;
+}
+
+#resume-container.hidden {
+  display: none !important;
+}
+
+/* 載入和錯誤容器 */
+#loading-error-container {
+  margin-bottom: 2rem;
+}
+
+/* ============================================
+   頁面標題 (h2)
+   ============================================ */
+
+main h2 {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin: 0rem 0 1rem 0;
+  text-align: left;
+  font-weight: 700;
+}
+
+/* ============================================
+   小標題 (h3) - 通用樣式
+   ============================================ */
+
+main h3 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 0.8rem;
+  margin-top: 0.5rem;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* ============================================
+   個人資訊區塊
+   ============================================ */
+
+.profile-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.profile-info-list {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 2rem;
+}
+
+.profile-info-list li {
+  margin-bottom: 0.8rem;
+  line-height: 1.6;
+  color: #333;
+}
+
+.profile-info-list a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.profile-info-list a:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+/* ============================================
+   教育背景區塊
+   ============================================ */
+
+.education-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.education-list {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 2rem;
+}
+
+.education-item {
+  margin-bottom: 1.5rem;
+  list-style: none;
+}
+
+.education-item.school-level {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  color: #2c3e50;
+  font-weight: 500;
+  display: list-item;
+  list-style-type: disc;
+  list-style-position: outside;
+  margin-left: 0;
+}
+
+.education-item.school-level .school-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.education-item.school-name {
+  font-weight: 600;
+}
+
+.education-item.school-location {
+  text-align: right;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* 學位列表 (第二層) */
+.education-degrees {
+  list-style-type: circle;
+  list-style-position: outside;
+  margin-left: 2rem;
+  margin-top: 0.3rem;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.education-item.degree-level {
+  margin-bottom: 0;
+  color: #555;
+  font-size: 0.95rem;
+  list-style-type: circle;
+  list-style-position: outside;
+  margin-left: 0;
+}
+
+.education-item.degree-level .degree-info {
+  flex: 1;
+}
+
+.education-item.degree-level .end-date {
+  text-align: right;
+  color: #999;
+  margin-left: 1rem;
+  min-width: fit-content;
+  font-size: 0.9rem;
+  float: right;
+}
+
+/* ============================================
+   工作經歷區塊
+   ============================================ */
+
+.work-experience-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.work-experience-list {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 2rem;
+}
+
+.work-experience-item {
+  margin-bottom: 2rem;
+  list-style: none;
+}
+
+.work-experience-item.work-level {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  color: #2c3e50;
+  display: block;
+  margin-left: 0;
+}
+
+.work-experience-item.work-level .company-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.work-experience-item.work-level .company-name {
+  font-weight: 600;
+  color: #2980b9;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.work-experience-item.work-level .company-name:hover {
+  color: #3498db;
+  text-decoration: underline;
+}
+
+.work-experience-item.work-level .company-location {
+  text-align: right;
+  color: #666;
+  font-size: 0.95rem;
+  margin-left: 1rem;
+  min-width: fit-content;
+}
+
+.work-experience-item.work-level .period-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.work-experience-item.work-level .period-summary .summary {
+  flex: 1;
+}
+
+.work-experience-item.work-level .period-summary .period {
+  text-align: right;
+  margin-left: 1rem;
+  min-width: fit-content;
+}
+
+/* 分隔線 */
+.work-experience-divider {
+  border-top: 1px solid #ddd;
+  margin: 1rem 0;
+}
+
+/* 專案列表（第一層項目符號） */
+.work-experience-projects {
+  list-style-type: disc;
+  list-style-position: outside;
+  margin-left: 2rem;
+  margin-top: 0.5rem;
+  padding-left: 0;
+}
+
+/* 專案項目（第一層，實心圓圈） */
+.work-experience-item.project-level {
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-size: 0.95rem;
+  display: list-item;
+  list-style-type: disc;
+  list-style-position: outside;
+}
+
+.work-experience-item.project-level .project-name {
+  font-weight: 500;
+}
+
+.work-experience-item.project-level a {
+  color: #3498db;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.work-experience-item.project-level a:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.work-experience-item.project-detail {
+  margin-left: 0;
+  margin-bottom: 0.2rem;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: list-item;
+  list-style-type: circle;
+  list-style-position: outside;
+}
+
+/* 專案細節列表（第二層項目符號） */
+.work-experience-details {
+  list-style-type: circle;
+  list-style-position: outside;
+  margin-left: 2rem;
+  margin-top: 0.3rem;
+  padding-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+/* 嵌套的 ul 樣式已移至上方各自的規則中 */
+
+/* ============================================
+   專業技能區塊
+   ============================================ */
+
+.skills-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.skills-list {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 2rem;
+}
+
+.skills-item {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+.skills-item .skill-category {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.skills-item .skill-items {
+  color: #555;
+}
+
+/* ============================================
+   響應式設計 - 平板 (768px 以下)
+   ============================================ */
+
+@media (max-width: 768px) {
+  #resume-container {
+    padding: 1rem;
+  }
+
+  main h2 {
+    font-size: 1.6rem;
+    margin: 1.5rem 0 1rem 0;
+  }
+
+  main h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .profile-section,
+  .education-section,
+  .work-experience-section,
+  .skills-section {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-info-list,
+  .education-list,
+  .work-experience-list,
+  .skills-list {
+    padding-left: 1.5rem;
+  }
+
+  .education-item.school-level .school-info,
+  .education-item.degree-level,
+  .work-experience-item.work-level .company-info,
+  .work-experience-item.work-level .period-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .education-item.school-location,
+  .education-item.degree-level .end-date,
+  .work-experience-item.work-level .company-location,
+  .work-experience-item.work-level .period-summary .period {
+    text-align: left;
+    margin-left: 0;
+    margin-top: 0.3rem;
+  }
+
+  .education-item.degree-level {
+    margin-left: 0.5rem;
+  }
+
+  .work-experience-item.project-level {
+    margin-left: 0.5rem;
+  }
+
+  .work-experience-item.project-detail {
+    margin-left: 1.5rem;
+  }
+}
+
+/* ============================================
+   響應式設計 - 手機 (480px 以下)
+   ============================================ */
+
+@media (max-width: 480px) {
+  #resume-container {
+    padding: 0.8rem;
+  }
+
+  main h2 {
+    font-size: 1.3rem;
+    margin: 1rem 0 0.8rem 0;
+  }
+
+  main h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+    margin-top: 1.2rem;
+    padding-bottom: 0.4rem;
+    border-bottom-width: 2px;
+  }
+
+  .profile-section,
+  .education-section,
+  .work-experience-section,
+  .skills-section {
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .profile-info-list,
+  .education-list,
+  .work-experience-list,
+  .skills-list {
+    padding-left: 1rem;
+  }
+
+  .profile-info-list li,
+  .education-item,
+  .work-experience-item,
+  .skills-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .education-item.school-level,
+  .work-experience-item.work-level {
+    margin-bottom: 0.8rem;
+  }
+
+  .education-item.degree-level,
+  .work-experience-item.project-level,
+  .work-experience-item.project-detail {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .work-experience-item.project-detail {
+    margin-left: 1rem;
+  }
+
+  .work-experience-divider {
+    margin: 0.5rem 0;
+  }
+}
+
+/* ============================================
+   公共樣式
+   ============================================ */
+
+.hidden {
+  display: none !important;
+}
+
+a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}

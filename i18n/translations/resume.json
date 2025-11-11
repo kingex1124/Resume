@@ -1,0 +1,86 @@
+{
+  "zh-TW": {
+    "resume": {
+      "title": "履歷表",
+      "profileSection": {
+        "title": "個人資訊",
+        "fullName": "姓名",
+        "email": "電郵",
+        "phone": "電話",
+        "location": "位置"
+      },
+      "educationSection": {
+        "title": "教育背景"
+      },
+      "workExperienceSection": {
+        "title": "工作經歷"
+      },
+      "skillsSection": {
+        "title": "專業技能"
+      },
+      "common": {
+        "loading": "正在載入...",
+        "error": "錯誤",
+        "errorLoadingData": "載入資料失敗",
+        "tryAgain": "重試",
+        "close": "關閉"
+      }
+    }
+  },
+  "ja": {
+    "resume": {
+      "title": "履歴書",
+      "profileSection": {
+        "title": "個人情報",
+        "fullName": "氏名",
+        "email": "メールアドレス",
+        "phone": "電話番号",
+        "location": "場所"
+      },
+      "educationSection": {
+        "title": "教育背景"
+      },
+      "workExperienceSection": {
+        "title": "職務経歴"
+      },
+      "skillsSection": {
+        "title": "専門技能"
+      },
+      "common": {
+        "loading": "読み込み中...",
+        "error": "エラー",
+        "errorLoadingData": "データの読み込みに失敗しました",
+        "tryAgain": "もう一度試す",
+        "close": "閉じる"
+      }
+    }
+  },
+  "en": {
+    "resume": {
+      "title": "Resume",
+      "profileSection": {
+        "title": "Personal Information",
+        "fullName": "Full Name",
+        "email": "Email",
+        "phone": "Phone",
+        "location": "Location"
+      },
+      "educationSection": {
+        "title": "Education"
+      },
+      "workExperienceSection": {
+        "title": "Work Experience"
+      },
+      "skillsSection": {
+        "title": "Professional Skills"
+      },
+      "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "errorLoadingData": "Failed to load data",
+        "tryAgain": "Try Again",
+        "close": "Close"
+      }
+    }
+  }
+}

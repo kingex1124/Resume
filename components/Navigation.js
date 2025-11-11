@@ -231,6 +231,7 @@ export class Navigation {
     const menuStructure = [
       { key: 'home', url: 'index.html' },
       { key: 'portfolio', url: 'portfolio.html' },
+      { key: 'resume', url: 'resume.html' },
       { key: 'workExperience', url: 'work-experience.html' }
     ];
 
