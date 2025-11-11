@@ -200,10 +200,28 @@ export class ResumeService {
         }
         
         await this._initializeUI();
+
+        // 立即重繪頁面，確保已解密的資料顯示出來（避免使用者需要手動重新整理）
+        try {
+          const ResumeApp = (await import('../components/ResumeApp.js')).default;
+          const app = new ResumeApp();
+          app.renderPage();
+        } catch (err) {
+          console.error('❌ 無法重繪頁面:', err);
+        }
       } else if (totalEncrypted === 0) {
         // 沒有加密資料需要解密
         console.log('ℹ️ 沒有加密資料需要解密');
         await this._initializeUI();
+
+        // 即使沒有加密資料，也確保頁面被正確渲染
+        try {
+          const ResumeApp = (await import('../components/ResumeApp.js')).default;
+          const app = new ResumeApp();
+          app.renderPage();
+        } catch (err) {
+          console.error('❌ 無法重繪頁面:', err);
+        }
       }
     } catch (error) {
       LoginComponent.showError('登入失敗: ' + error.message);
