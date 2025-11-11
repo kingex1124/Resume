@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>履歷表</title>
-  
+
   <!-- 共用樣式 -->
   <link rel="stylesheet" href="./styles/base.css">
   <link rel="stylesheet" href="./styles/navigation.css">
   <link rel="stylesheet" href="./styles/login-screen.css">
-  
+
   <!-- 專屬樣式 -->
   <link rel="stylesheet" href="./styles/resume.css">
 </head>
+
 <body>
   <!-- 登入畫面 -->
   <div id="loginScreen" class="hidden"></div>
-  
+
   <!-- 導覽列 -->
   <nav id="navigation"></nav>
 
@@ -69,20 +71,25 @@
   <script type="module">
     import { ResumeService } from './services/ResumeService.js';
     import { LanguageManager } from './i18n/LanguageManager.js';
+    import { BackToTopButton } from './components/BackToTopButton.js';
 
     /**
      * 初始化應用程式
      */
     async function initializeApp() {
       console.log('🚀 初始化履歷頁面...');
-      
+
       try {
         // 1. 初始化語言管理器（自動從 URL 或 localStorage 讀取）
         const language = LanguageManager.initialize();
         console.log(`📍 檢測到語言: ${language}`);
 
+
         // 2. 初始化應用狀態和加載資料
         await ResumeService.initializeApp(language);
+
+        // 初始化回到最上方按鈕
+        BackToTopButton.initialize();
 
         // 3. 建立頁面應用實例並渲染
         const ResumeApp = (await import('./components/ResumeApp.js')).default;
@@ -108,4 +115,5 @@
     document.addEventListener('DOMContentLoaded', initializeApp);
   </script>
 </body>
+
 </html>

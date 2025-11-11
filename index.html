@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +14,7 @@
 <body>
   <!-- 登入畫面 -->
   <div id="loginScreen"></div>
-  
+
   <!-- 導覽欄 -->
   <nav id="navigation"></nav>
 
@@ -46,20 +47,25 @@
   <script type="module">
     import { IndexService } from "./services/IndexService.js";
     import { LanguageManager } from "./i18n/LanguageManager.js";
+    import { BackToTopButton } from "./components/BackToTopButton.js";
 
     /**
      * 初始化首頁應用
      */
     async function initializeApp() {
       console.log('🚀 初始化首頁...');
-      
+
       try {
         // 1️⃣ 初始化語言管理器（自動從 URL 或 localStorage 讀取）
         const language = LanguageManager.initialize();
         console.log(`📍 檢測到語言: ${language}`);
 
+
         // 2️⃣ 初始化首頁應用（包含登入處理）
         await IndexService.initializeApp(language);
+
+        // 3️⃣ 初始化右下角回到最上方按鈕
+        BackToTopButton.initialize();
 
         console.log('✅ 首頁初始化完成');
       } catch (error) {

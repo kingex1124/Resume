@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <link rel="stylesheet" href="./styles/work-experience-modal.css">
     <link rel="stylesheet" href="./styles/work-experience.css">
 </head>
+
 <body>
     <div id="loginScreen"></div>
     <!-- 導覽欄 -->
@@ -39,13 +41,14 @@
     <script type="module">
         import { WorkExperienceService } from './services/WorkExperienceService.js';
         import { LanguageManager } from './i18n/LanguageManager.js';
+        import { BackToTopButton } from './components/BackToTopButton.js';
 
         /**
          * 初始化應用程式
          */
         async function initializeApp() {
             console.log('🚀 初始化工作經歷頁面...');
-            
+
             try {
                 // 1. 初始化語言管理器（自動從 URL 或 localStorage 讀取）
                 const language = LanguageManager.initialize();
@@ -53,6 +56,9 @@
 
                 // 2. 初始化應用狀態和加載資料
                 await WorkExperienceService.initializeApp(language);
+
+                // 初始化回到最上方按鈕
+                BackToTopButton.initialize();
 
                 console.log('✅ 工作經歷頁面初始化完成');
             } catch (error) {
@@ -73,4 +79,5 @@
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
+
 </html>
