@@ -17,16 +17,10 @@ body {
 }
 
 /* ============================================
-   登入狀態下隱藏導航
+   登入狀態下的 UI 控制
    ============================================ */
 
-#loginScreen:not([style*="display: none"]) ~ nav {
-  display: none !important;
-}
-
-#loginScreen:not([style*="display: none"]) ~ main {
-  display: none !important;
-}
+/* 無需使用 CSS 選擇器，由 JavaScript 完全控制 */
 
 /* ============================================
    導航欄樣式
@@ -46,7 +40,7 @@ main {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  display: none;
+  display: block;
 }
 
 .header {

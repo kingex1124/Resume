@@ -11,223 +11,64 @@
 </head>
 
 <body>
+  <!-- 登入畫面 -->
   <div id="loginScreen"></div>
+  
+  <!-- 導覽欄 -->
   <nav id="navigation"></nav>
+
+  <!-- 主內容區域 -->
   <main>
     <div class="header">
       <div>
         <h1>🎉 歡迎回來</h1>
-        <p>資料已成功解密並載入</p>
+        <p>個人簡介內容準備中...</p>
       </div>
     </div>
     <div id="contentArea">
-      <div class="loading">
-        <div class="spinner"></div>
-        <p>正在載入資料...</p>
+      <div class="card full-width">
+        <h2>📝 個人簡介</h2>
+        <div class="card-content">
+          <p>個人簡介內容將在此顯示</p>
+          <p>資料準備中...</p>
+        </div>
       </div>
     </div>
   </main>
 
+  <!-- 頁腳 -->
+  <footer>
+    <p>© 2025 履歷系統. 版本 1.0 | 最後更新: <span id="last-updated">2025-11-11</span></p>
+    <p><a href="work-experience.html">工作經歷</a> | <a href="portfolio.html">檢視作品集</a></p>
+  </footer>
+
+  <!-- 載入應用程式 -->
   <script type="module">
-    import { LoginComponent } from "./components/LoginComponent.js";
-    import { Navigation } from "./components/Navigation.js";
-    import { LoginService } from "./services/LoginService.js";
-    import { DataRepository } from "./repositories/DataRepository.js";
+    import { IndexService } from "./services/IndexService.js";
     import { LanguageManager } from "./i18n/LanguageManager.js";
 
-    let encryptedData = null;
-    const contentArea = document.getElementById("contentArea");
-    const loginScreen = document.getElementById("loginScreen");
-    const mainContent = document.querySelector("main");
-
-    async function init() {
+    /**
+     * 初始化首頁應用
+     */
+    async function initializeApp() {
+      console.log('🚀 初始化首頁...');
+      
       try {
-        // 1. 初始化語言管理器（優先順序：URL > localStorage > 預設）
-        const currentLanguage = LanguageManager.initialize();
-        console.log(`🌐 LanguageManager 初始化完成，當前語言: ${currentLanguage}`);
+        // 1️⃣ 初始化語言管理器（自動從 URL 或 localStorage 讀取）
+        const language = LanguageManager.initialize();
+        console.log(`📍 檢測到語言: ${language}`);
 
-        encryptedData = await DataRepository.loadEncryptedData();
-        console.log("✅ 初始化完成");
+        // 2️⃣ 初始化首頁應用（包含登入處理）
+        await IndexService.initializeApp(language);
 
-        LoginComponent.initialize({
-          containerId: "loginScreen",
-          onLogin: handleLogin
-        });
-
-        console.log("✅ LoginComponent 初始化完成");
-
-        const menuItems = Navigation.getMenuItemsByLanguage();
-        console.log("📋 菜單項目:", menuItems);
-        
-        Navigation.initialize({
-          containerId: "navigation",
-          menuItems: menuItems,
-          currentLanguage: currentLanguage,
-          onLanguageChange: handleLanguageChange,
-          onLogout: handleLogout,
-          onMenuClick: handleMenuClick,
-          translations: menuItems
-        });
-
-        console.log("✅ Navigation 初始化完成");
-
-        await tryRestoreSession();
+        console.log('✅ 首頁初始化完成');
       } catch (error) {
-        console.error("❌ 初始化失敗:", error);
-        LoginComponent.showError("無法載入資料檔案: " + error.message);
+        console.error('❌ 首頁初始化失敗:', error);
       }
     }
 
-    async function handleLogin(password) {
-      try {
-        const result = await LoginService.login(password, encryptedData);
-
-        if (result.success) {
-          displayContent(result.data);
-          loginScreen.style.display = "none";
-          mainContent.style.display = "block";
-          // 確保導航欄可見
-          const nav = document.getElementById("navigation");
-          if (nav) nav.style.display = "block";
-          console.log("✅ 登入成功");
-        } else {
-          LoginComponent.showError(result.message);
-          console.log("❌ 登入失敗:", result.message);
-        }
-      } catch (error) {
-        LoginComponent.showError("登入失敗: " + error.message);
-        console.error("❌ 登入錯誤:", error);
-      }
-    }
-
-    async function tryRestoreSession() {
-      if (!encryptedData) return;
-
-      const result = await LoginService.restoreSession(encryptedData);
-
-      if (result.success) {
-        console.log("✅ 會話已還原");
-        displayContent(result.data);
-        loginScreen.style.display = "none";
-        mainContent.style.display = "block";
-        // 確保導航欄可見
-        const nav = document.getElementById("navigation");
-        if (nav) nav.style.display = "block";
-      }
-    }
-
-    function handleLogout() {
-      LoginService.logout();
-      LoginComponent.reset();
-      LoginComponent.focus();
-      mainContent.style.display = "none";
-      loginScreen.style.display = "flex";
-      contentArea.innerHTML = "<div class=\"loading\"><div class=\"spinner\"></div><p>正在載入資料...</p></div>";
-      console.log("✅ 登出成功");
-    }
-
-    function handleLanguageChange(language) {
-      console.log(`🌐 語言已切換為: ${language}`);
-      Navigation.updateMenuByLanguage(language);
-    }
-
-    function handleMenuClick(index, url) {
-      console.log(`📌 菜單項目被點擊: ${index}，URL: ${url}`);
-      Navigation.setActiveMenuItem(index);
-      if (url) {
-        // 使用 LanguageManager 添加語言參數到 URL
-        const urlWithLang = LanguageManager.generateLanguageURL(url);
-        window.location.href = urlWithLang;
-      }
-    }
-
-    function displayContent(data) {
-      const html = `
-        <div class="content-grid">
-          <div class="card full-width">
-            <h2>👤 個人資訊</h2>
-            <div class="card-content">
-              <div class="info-item"><strong>姓名：</strong><span>${data.personal.name}</span></div>
-              <div class="info-item"><strong>職稱：</strong><span>${data.personal.title}</span></div>
-              <div class="info-item"><strong>Email：</strong><span>${data.personal.email}</span></div>
-              <div class="info-item"><strong>電話：</strong><span>${data.personal.phone}</span></div>
-              <div class="info-item"><strong>地點：</strong><span>${data.personal.location}</span></div>
-              <div class="info-item"><strong>簡介：</strong><span>${data.personal.bio}</span></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>💻 專業技能</h2>
-            <div class="card-content">
-              ${data.skills.map(skill => `
-                <div class="skill-category">
-                  <h4>${skill.category}</h4>
-                  <div class="skill-tags">
-                    ${skill.items.map(item => `<span class="skill-tag">${item}</span>`).join("")}
-                  </div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>🎓 教育背景</h2>
-            <div class="card-content">
-              ${data.education.map(edu => `
-                <div class="experience-item">
-                  <h3>${edu.school}</h3>
-                  <div class="period">${edu.period}</div>
-                  <p>${edu.degree}</p>
-                  <p><strong>GPA：</strong> ${edu.gpa}</p>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-
-          <div class="card full-width">
-            <h2>💼 工作經驗</h2>
-            <div class="card-content">
-              ${data.experience.map(exp => `
-                <div class="experience-item">
-                  <h3>${exp.company} - ${exp.position}</h3>
-                  <div class="period">${exp.period}</div>
-                  <p>${exp.description}</p>
-                  ${exp.achievements ? `<ul class="achievements">${exp.achievements.map(ach => `<li>${ach}</li>`).join("")}</ul>` : ""}
-                </div>
-              `).join("")}
-            </div>
-          </div>
-
-          <div class="card full-width">
-            <h2>🚀 專案作品</h2>
-            <div class="card-content">
-              ${data.projects.map(proj => `
-                <div class="project-item">
-                  <h3>${proj.name}</h3>
-                  <p>${proj.description}</p>
-                  <div class="tech"><strong>技術：</strong> ${proj.tech.join(", ")}</div>
-                  ${proj.url ? `<a href="${proj.url}" target="_blank" style="color: #667eea;">🔗 查看專案</a>` : ""}
-                </div>
-              `).join("")}
-            </div>
-          </div>
-
-          <div class="card full-width">
-            <h2>📜 專業證照</h2>
-            <div class="card-content">
-              <div class="skill-tags">
-                ${data.certifications.map(cert => `<span class="skill-tag">${cert.name} (${cert.year})</span>`).join("")}
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      contentArea.innerHTML = html;
-    }
-
-    init();
-    console.log("🔐 加密履歷系統已載入");
-    console.log("💡 預設密碼: mySecurePassword123");
+    // DOMContentLoaded 時初始化應用
+    document.addEventListener('DOMContentLoaded', initializeApp);
   </script>
 </body>
 
