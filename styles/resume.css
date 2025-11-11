@@ -4,14 +4,20 @@
  */
 
 /* ============================================
-   主容器與頁面結構
-   ============================================ */
+  主容器與頁面結構
+  ============================================ */
+
+/* 針對 resume.html：將外層 html/body 背景設為與 #resume-container 相同，
+  以移除「雙層背景」視覺差異。此檔案僅在 resume.html 載入，故安全覆寫。 */
+html, body {
+  background-color: #f5f5f5;
+}
 
 #resume-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  background-color: #f8f9fa;
+  background-color: #f5f5f5;
   display: block;
 }
 
