@@ -2,7 +2,6 @@
   "zh-TW": {
     "navigation": {
       "home": "首頁",
-      "portfolio": "作品集",
       "resume": "履歷表",
       "workExperience": "工作經歷",
       "logout": "登出",
@@ -13,7 +12,6 @@
   "ja": {
     "navigation": {
       "home": "ホーム",
-      "portfolio": "ポートフォリオ",
       "resume": "履歴書",
       "workExperience": "職務経歴",
       "logout": "ログアウト",
@@ -24,7 +22,6 @@
   "en": {
     "navigation": {
       "home": "Home",
-      "portfolio": "Portfolio",
       "resume": "Resume",
       "workExperience": "Work Experience",
       "logout": "Logout",
