@@ -64,26 +64,50 @@ export class WorkExperienceRepository {
   }
   
   /**
-   * 取得所有工作經歷 (type='parent')
+   * 取得所有工作經歷 (type='parent' 且 isDisplayed=true)
+   * 同時過濾子專案中 isDisplayed=true 的項目
    * @param {Object} data - 工作經歷資料物件
    * @returns {Array} parent 類型的工作經歷陣列
    */
   static getParentWorkExperiences(data) {
-    return data.workExperiences.filter(exp => exp.type === 'parent');
+    return data.workExperiences
+      .filter(exp => exp.type === 'parent' && exp.isDisplayed !== false)
+      .map(exp => ({
+        ...exp,
+        projects: Array.isArray(exp.projects)
+          ? exp.projects.filter(project => project.isDisplayed !== false)
+          : []
+      }));
   }
   
   /**
-   * 根據 ID 取得工作經歷資訊
+   * 根據 ID 取得工作經歷資訊 (需檢查 isDisplayed)
+   * 同時過濾子專案中 isDisplayed=true 的項目
    * @param {Object} data - 工作經歷資料物件
    * @param {string} id - 工作經歷 ID
    * @returns {Object|null} 工作經歷物件或 null
    */
   static getWorkExperienceById(data, id) {
-    return data.workExperiences.find(exp => exp.id === id) || null;
+    const exp = data.workExperiences.find(exp => exp.id === id) || null;
+    
+    if (!exp) return null;
+    
+    // 檢查是否應該顯示此工作經歷
+    if (exp.isDisplayed === false) {
+      return null;
+    }
+    
+    // 過濾子專案中 isDisplayed=true 的項目
+    return {
+      ...exp,
+      projects: Array.isArray(exp.projects)
+        ? exp.projects.filter(project => project.isDisplayed !== false)
+        : []
+    };
   }
   
   /**
-   * 根據 parent ID 取得所有子專案
+   * 根據 parent ID 取得所有子專案 (過濾 isDisplayed=true)
    * @param {Object} data - 工作經歷資料物件
    * @param {string} parentId - Parent 工作經歷 ID
    * @returns {Array} 子專案陣列
@@ -94,7 +118,7 @@ export class WorkExperienceRepository {
       return [];
     }
     
-    return parentExp.projects.filter(project => project.type === 'child');
+    return parentExp.projects.filter(project => project.type === 'child' && project.isDisplayed !== false);
   }
   
   /**

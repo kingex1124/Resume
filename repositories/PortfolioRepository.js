@@ -60,15 +60,36 @@ export class PortfolioRepository {
     }
   }
 
-  // 取得所有作品集
+  // 取得所有作品集 (過濾 isDisplayed=true 的資料與專案)
   static getPortfolios(data) {
-    return Array.isArray(data.portfolios) ? data.portfolios : [];
+    if (!Array.isArray(data.portfolios)) return [];
+    
+    return data.portfolios
+      .filter(portfolio => portfolio.isDisplayed !== false)
+      .map(portfolio => ({
+        ...portfolio,
+        projects: Array.isArray(portfolio.projects)
+          ? portfolio.projects.filter(project => project.isDisplayed !== false)
+          : []
+      }));
   }
 
-  // 根據工作經驗 ID 取得作品集
+  // 根據工作經驗 ID 取得作品集 (過濾 isDisplayed=true 的資料與專案)
   static getPortfolioByWorkExpId(data, workExpId) {
     if (!Array.isArray(data.portfolios)) return null;
-    return data.portfolios.find(p => p.workExpId === workExpId) || null;
+    
+    const portfolio = data.portfolios.find(p => p.workExpId === workExpId);
+    
+    if (!portfolio || portfolio.isDisplayed === false) {
+      return null;
+    }
+    
+    return {
+      ...portfolio,
+      projects: Array.isArray(portfolio.projects)
+        ? portfolio.projects.filter(project => project.isDisplayed !== false)
+        : []
+    };
   }
 
   // 取得所有工作經驗的 ID 列表
