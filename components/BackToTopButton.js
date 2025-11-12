@@ -38,7 +38,7 @@ export const BackToTopButton = {
 
     // 建立樣式 (不含顯示/隱藏)
     const styleEl = document.createElement('style');
-    styleEl.textContent = `#back-to-top-btn{position:fixed!important;bottom:12px!important;right:12px!important;width:52px!important;height:52px!important;border-radius:50%!important;background-color:#3498db!important;color:#fff!important;border:none!important;font-size:20px!important;cursor:pointer!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;box-shadow:0 4px 12px rgba(0,0,0,0.15)!important;transition:all .28s ease!important;margin:0!important;padding:0!important;}`;
+    styleEl.textContent = `#back-to-top-btn{position:fixed!important;bottom:20px!important;right:20px!important;width:52px!important;height:52px!important;border-radius:50%!important;background-color:#3498db!important;color:#fff!important;border:none!important;font-size:20px!important;cursor:pointer!important;z-index:999999!important;display:flex!important;align-items:center!important;justify-content:center!important;box-shadow:0 4px 12px rgba(0,0,0,0.15)!important;transition:all .28s ease!important;margin:0!important;padding:0!important;}`;
     document.head.appendChild(styleEl);
 
     // 建立按鈕
@@ -133,10 +133,10 @@ export const BackToTopButton = {
 
     function updateGeometry() {
       const w = window.innerWidth;
-      let bottom = 12, right = 12, size = 52, fontSize = 20;
-      if (w <= 480) { bottom = 6; right = 6; size = 48; fontSize = 18; }
-      else if (w <= 640) { bottom = 8; right = 8; size = 48; fontSize = 18; }
-      else if (w <= 900) { bottom = 10; right = 10; }
+      let bottom = 20, right = 20, size = 52, fontSize = 20;
+      if (w <= 480) { bottom = 20; right = 20; size = 48; fontSize = 18; }
+      else if (w <= 640) { bottom = 20; right = 20; size = 48; fontSize = 18; }
+      else if (w <= 900) { bottom = 20; right = 20; }
       btn.style.setProperty('position', 'fixed', 'important');
       btn.style.setProperty('bottom', bottom + 'px', 'important');
       btn.style.setProperty('right', right + 'px', 'important');
