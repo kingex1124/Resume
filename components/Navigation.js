@@ -52,8 +52,6 @@ export class Navigation {
       onLogout,
       translations: navigationTranslations
     });
-    
-    console.log('✅ 導覽欄初始化完成');
   }
   
   /**
@@ -130,7 +128,6 @@ export class Navigation {
         e.preventDefault();
         e.stopPropagation();
         navMenu.classList.toggle('active');
-        console.log('📱 漢堡菜單切換');
       });
     }
     
@@ -152,7 +149,6 @@ export class Navigation {
       
       languageSelect.addEventListener('change', async (e) => {
         const selectedLanguage = e.target.value;
-        console.log(`🌐 語言已切換為: ${selectedLanguage}`);
         
         // 1. 使用 LanguageManager 更新 URL 參數
         const { LanguageManager } = await import('../i18n/LanguageManager.js');
@@ -174,7 +170,6 @@ export class Navigation {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        console.log('🔓 用戶點擊登出按鈕');
         
         // 獲取翻譯的確認訊息
         const confirmMessage = translations?.navigation?.confirmLogout || '確定要登出嗎？';
@@ -257,7 +252,6 @@ export class Navigation {
   static async loadNavigationTranslations(language) {
     try {
       const translations = await i18nService.loadModuleTranslations('navigation', language);
-      console.log(`✅ 已載入導覽列翻譯: ${language}`, translations);
       return translations;
     } catch (error) {
       console.error('❌ 載入導覽列翻譯失敗:', error.message);
@@ -295,8 +289,6 @@ export class Navigation {
     if (navTranslations && navTranslations.navigation) {
       this._updateI18nElements(navTranslations);
     }
-
-    console.log(`✅ 菜單已用 ${language} 語言更新`);
   }
 
   /**
@@ -338,8 +330,6 @@ export class Navigation {
       if (logoutBtn && translations.navigation?.logout) {
         logoutBtn.textContent = translations.navigation.logout;
       }
-
-      console.log('✅ i18n 元素已更新');
     } catch (err) {
       console.error('❌ _updateI18nElements 發生錯誤:', err);
     }
@@ -370,7 +360,6 @@ export class Navigation {
    * @param {string} url - 導航 URL
    */
   static handleMenuClick(index, url = null) {
-    console.log(`📌 菜單項目被點擊: ${index}，URL: ${url}`);
     Navigation.setActiveMenuItem(index);
     
     // 導航到指定頁面
@@ -385,14 +374,10 @@ export class Navigation {
    * @param {string} tableContainerId - 工作經歷表格容器 ID（可選，預設為 'work-experience-table'）
    */
   static async handleLogout(tableContainerId = 'work-experience-table') {
-    console.log('🔓 用戶登出');
-    
     try {
       // 1. 清除認證資訊和 Cookie
       const { LoginService } = await import('../services/LoginService.js');
       LoginService.logout();
-      
-      console.log('✅ 登出完成');
       
       // 2. 隱藏主內容和導覽欄（只在 work-experience.html 有效）
       const mainContent = document.querySelector('main');
@@ -417,10 +402,7 @@ export class Navigation {
       const tableContainer = document.getElementById(tableContainerId);
       if (tableContainer) {
         tableContainer.innerHTML = '';
-        console.log('✅ Data 清空');
       }
-      
-      console.log('✅ 頁面已回到登入畫面');
     } catch (error) {
       console.error('❌ 登出失敗:', error);
     }

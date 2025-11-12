@@ -45,14 +45,11 @@ export class ResumeService {
    */
   static async initializeApp(language = 'zh-TW') {
     try {
-      console.log('🚀 開始初始化履歷應用...');
-      
       // 1. 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
       const detectedLanguage = LanguageManager.initialize();
       const finalLanguage = detectedLanguage || language || 'zh-TW';
       
       this.#appState.currentLanguage = finalLanguage;
-      console.log(`🌐 應用語言已設置為: ${finalLanguage}`);
 
       // 初始化 i18n 服務
       i18nService.initialize(finalLanguage);
@@ -79,13 +76,11 @@ export class ResumeService {
         this.#encryptedWorkExperienceData = workExpData;
       }
 
-      console.log('📥 所有資料已載入');
-
       // 2. 初始化登入元件
       LoginComponent.initialize({
         containerId: 'loginScreen',
         onLogin: (password) => this.handleLogin(password),
-        onCancel: () => console.log('登入取消')
+        onCancel: () => {}
       });
 
       // 3. 檢查是否有任何加密資料需要解密
@@ -94,13 +89,10 @@ export class ResumeService {
                                 workExpData.encrypted === true;
 
       if (hasEncryptedData) {
-        console.log('🔍 偵測到加密資料，檢查 Cookie...');
-        
         // 優先從 Cookie 還原會話
         const decryptResult = await this.tryRestoreSession();
 
         if (decryptResult.success) {
-          console.log('✅ 會話已還原');
           // 更新已解密的資料
           if (decryptResult.data.profile) {
             this.#appState.profileData = decryptResult.data.profile;
@@ -113,13 +105,11 @@ export class ResumeService {
           }
           return await this._initializeUI();
         } else {
-          console.log('⚠️ 無有效會話，顯示登入畫面');
           LoginComponent.show();
           return this.#appState;
         }
       } else {
         // 非加密，直接初始化 UI
-        console.log('ℹ️ 資料未加密，直接初始化');
         return await this._initializeUI();
       }
     } catch (error) {
@@ -136,8 +126,6 @@ export class ResumeService {
    */
   static async handleLogin(password) {
     try {
-      console.log('🔐 開始登入流程...');
-
       const decryptedData = {};
       let successCount = 0;
       let totalEncrypted = 0;
@@ -145,12 +133,10 @@ export class ResumeService {
       // 嘗試解密 profile 資料
       if (this.#encryptedProfileData) {
         totalEncrypted++;
-        console.log('🔐 嘗試解密 Profile 資料...');
         const result = await LoginService.login(password, this.#encryptedProfileData);
         if (result.success) {
           decryptedData.profile = result.data;
           successCount++;
-          console.log('✅ Profile 資料解密成功');
         } else {
           throw new Error('Profile 資料解密失敗: ' + result.message);
         }
@@ -159,12 +145,10 @@ export class ResumeService {
       // 嘗試解密 portfolio 資料
       if (this.#encryptedPortfolioData) {
         totalEncrypted++;
-        console.log('🔐 嘗試解密 Portfolio 資料...');
         const result = await LoginService.login(password, this.#encryptedPortfolioData);
         if (result.success) {
           decryptedData.portfolio = result.data;
           successCount++;
-          console.log('✅ Portfolio 資料解密成功');
         } else {
           throw new Error('Portfolio 資料解密失敗: ' + result.message);
         }
@@ -173,12 +157,10 @@ export class ResumeService {
       // 嘗試解密 workExperience 資料
       if (this.#encryptedWorkExperienceData) {
         totalEncrypted++;
-        console.log('🔐 嘗試解密 WorkExperience 資料...');
         const result = await LoginService.login(password, this.#encryptedWorkExperienceData);
         if (result.success) {
           decryptedData.workExperience = result.data;
           successCount++;
-          console.log('✅ WorkExperience 資料解密成功');
         } else {
           throw new Error('WorkExperience 資料解密失敗: ' + result.message);
         }
@@ -186,7 +168,6 @@ export class ResumeService {
 
       // 檢查是否所有加密資料都成功解密
       if (successCount === totalEncrypted && totalEncrypted > 0) {
-        console.log(`✅ 所有 ${totalEncrypted} 個加密資料源成功解密`);
         
         // 更新應用狀態
         if (decryptedData.profile) {
@@ -211,7 +192,6 @@ export class ResumeService {
         }
       } else if (totalEncrypted === 0) {
         // 沒有加密資料需要解密
-        console.log('ℹ️ 沒有加密資料需要解密');
         await this._initializeUI();
 
         // 即使沒有加密資料，也確保頁面被正確渲染
@@ -236,50 +216,40 @@ export class ResumeService {
    */
   static async tryRestoreSession(encryptedData = null) {
     try {
-      console.log('🔄 嘗試還原會話...');
-
       const decryptedData = {};
       let successCount = 0;
 
       // 嘗試還原 profile 資料
       if (this.#encryptedProfileData) {
-        console.log('🔄 嘗試還原 Profile...');
         const result = await LoginService.restoreSession(this.#encryptedProfileData);
         if (result.success) {
           decryptedData.profile = result.data;
           successCount++;
-          console.log('✅ Profile 已還原');
         }
       }
 
       // 嘗試還原 portfolio 資料
       if (this.#encryptedPortfolioData) {
-        console.log('🔄 嘗試還原 Portfolio...');
         const result = await LoginService.restoreSession(this.#encryptedPortfolioData);
         if (result.success) {
           decryptedData.portfolio = result.data;
           successCount++;
-          console.log('✅ Portfolio 已還原');
         }
       }
 
       // 嘗試還原 workExperience 資料
       if (this.#encryptedWorkExperienceData) {
-        console.log('🔄 嘗試還原 WorkExperience...');
         const result = await LoginService.restoreSession(this.#encryptedWorkExperienceData);
         if (result.success) {
           decryptedData.workExperience = result.data;
           successCount++;
-          console.log('✅ WorkExperience 已還原');
         }
       }
 
       // 檢查是否至少還原了一個資料源
       if (successCount > 0) {
-        console.log(`✅ 會話已還原 (${successCount} 個資料源)`);
         return { success: true, data: decryptedData };
       } else {
-        console.log('ℹ️ 無有效會話');
         return { success: false, message: '無有效會話' };
       }
     } catch (error) {
@@ -321,7 +291,6 @@ export class ResumeService {
         mainContent.classList.remove('hidden');
       }
 
-      console.log('✅ UI 初始化完成');
       return this.#appState;
     } catch (error) {
       console.error('❌ UI 初始化失敗:', error);
@@ -336,7 +305,6 @@ export class ResumeService {
    */
   static async handleLanguageChange(language) {
     try {
-      console.log(`🌐 切換語言為: ${language}`);
       this.#appState.currentLanguage = language;
 
       // 清除翻譯快取並初始化新語言的 i18n
@@ -353,7 +321,6 @@ export class ResumeService {
       // 快取新語言的加密資料（如果被加密）
       if (profileData.encrypted === true) {
         this.#encryptedProfileData = profileData;
-        console.log('🔐 新語言的 Profile 被加密');
       } else {
         this.#encryptedProfileData = null;
         this.#appState.profileData = profileData;
@@ -361,7 +328,6 @@ export class ResumeService {
 
       if (portfolioData.encrypted === true) {
         this.#encryptedPortfolioData = portfolioData;
-        console.log('🔐 新語言的 Portfolio 被加密');
       } else {
         this.#encryptedPortfolioData = null;
         this.#appState.portfolioData = portfolioData;
@@ -369,7 +335,6 @@ export class ResumeService {
 
       if (workExpData.encrypted === true) {
         this.#encryptedWorkExperienceData = workExpData;
-        console.log('� 新語言的 WorkExperience 被加密');
       } else {
         this.#encryptedWorkExperienceData = null;
         this.#appState.workExperienceData = workExpData;
@@ -381,11 +346,9 @@ export class ResumeService {
                                 workExpData.encrypted === true;
 
       if (hasEncryptedData) {
-        console.log('🔍 新語言有加密資料，嘗試用 Cookie 重新解密...');
         const decryptResult = await this.tryRestoreSession();
 
         if (decryptResult.success) {
-          console.log('✅ 已用 Cookie 重新解密');
           if (decryptResult.data.profile) {
             this.#appState.profileData = decryptResult.data.profile;
           }
@@ -395,9 +358,6 @@ export class ResumeService {
           if (decryptResult.data.workExperience) {
             this.#appState.workExperienceData = decryptResult.data.workExperience;
           }
-        } else {
-          console.log('⚠️ 無有效會話，保持加密狀態');
-          // 保持加密狀態
         }
       }
 
@@ -414,8 +374,6 @@ export class ResumeService {
       const url = new URL(window.location);
       url.searchParams.set('lang', language);
       window.history.replaceState({}, '', url);
-
-      console.log('✅ 語言切換完成');
     } catch (error) {
       console.error('❌ 語言切換失敗:', error);
     }
@@ -426,8 +384,6 @@ export class ResumeService {
    */
   static async handleLogout() {
     try {
-      console.log('🚪 開始登出流程...');
-      
       // 清除會話和 Cookie
       LoginService.logout();
       
@@ -457,8 +413,6 @@ export class ResumeService {
       
       // 顯示登入畫面
       LoginComponent.show();
-      
-      console.log('✅ 登出完成，顯示登入畫面');
     } catch (error) {
       console.error('❌ 登出失敗:', error);
     }
@@ -493,7 +447,6 @@ export class ResumeService {
     const cacheKey = `resume_${language}`;
     if (this.#translationCache[cacheKey]) {
       delete this.#translationCache[cacheKey];
-      console.log(`📦 清除翻譯快取: ${cacheKey}`);
     }
   }
 

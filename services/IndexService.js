@@ -48,44 +48,34 @@ export class IndexService {
       i18nService.initialize(finalLanguage);
       this.#appState.currentLanguage = finalLanguage;
 
-      console.log(`🌐 應用語言已設置為: ${finalLanguage}`);
-
       // 2️⃣ 載入首頁資料（通過動態 import）
       const indexData = await this._loadIndexData(finalLanguage);
       this.#encryptedData = indexData;
       
-      console.log(`📥 首頁資料已載入，加密狀態: ${indexData.encrypted}`);
-
       // 3️⃣ 初始化登入元件
       LoginComponent.initialize({
         containerId: 'loginScreen',
         onLogin: (password) => this.handleLogin(password),
-        onCancel: () => console.log('登入取消')
+        onCancel: () => {}
       });
 
       LoginComponent.hide();
-      console.log('✅ 登入元件已初始化');
 
       // 4️⃣ 只有加密資料才需要檢查 Cookie
       if (indexData.encrypted === true) {
-        console.log('🔍 偵測到加密資料，先檢查 Cookie...');
-        
         // 優先嘗試從 Cookie 還原會話
         const decryptResult = await this.tryRestoreSession();
 
         if (decryptResult.success) {
-          console.log('✅ 會話已還原，資料已自動解密');
           this.#appState.contentData = decryptResult.data;
           return await this._initializeUI();
         } else {
-          console.log('⚠️ Cookie 無效或已過期，顯示登入畫面');
           // 沒有有效的 Cookie，顯示登入介面
           LoginComponent.show();
           return this.#appState;
         }
       } else {
         // 非加密資料，直接使用
-        console.log('ℹ️ 非加密資料，直接載入');
         this.#appState.contentData = indexData;
         return await this._initializeUI();
       }
@@ -160,7 +150,6 @@ export class IndexService {
         navBar.style.display = 'block';
       }
 
-      console.log('✅ UI 初始化完成');
       return this.#appState;
     } catch (error) {
       console.error('❌ UI 初始化失敗:', error);
@@ -176,8 +165,6 @@ export class IndexService {
    */
   static async handleLogin(password) {
     try {
-      console.log('🔐 開始登入流程...');
-
       if (!this.#encryptedData) {
         LoginComponent.showError('❌ 缺少加密資料，無法登入');
         return;
@@ -187,8 +174,6 @@ export class IndexService {
       const result = await LoginService.login(password, this.#encryptedData);
 
       if (result.success) {
-        console.log('✅ 登入成功，資料已解密');
-        
         // 更新應用狀態
         this.#appState.contentData = result.data;
         
@@ -219,20 +204,16 @@ export class IndexService {
         };
       }
 
-      console.log('🔄 嘗試從 Cookie 還原會話...');
-
       // 使用 LoginService 從 Cookie 還原會話
       const result = await LoginService.restoreSession(this.#encryptedData);
 
       if (result.success) {
-        console.log('✅ 會話已還原，使用者已認證');
         return {
           success: true,
           data: result.data,
           message: '會話已還原'
         };
       } else {
-        console.log('ℹ️ 無有效的會話 Cookie，需要重新登入');
         return {
           success: false,
           message: '無有效會話'
@@ -261,8 +242,6 @@ export class IndexService {
    */
   static async handleLanguageChange(language) {
     try {
-      console.log(`🌐 語言切換為: ${language}`);
-
       // 1. 更新語言管理器（自動更新 URL 和 localStorage）
       LanguageManager.setLanguage(language);
 
@@ -279,8 +258,6 @@ export class IndexService {
 
       // 5. 更新導覽欄菜單（Navigation 會自動載入正確的翻譯）
       Navigation.updateMenuByLanguage(language);
-
-      console.log('✅ 語言切換完成');
     } catch (error) {
       console.error('❌ 語言切換失敗:', error);
     }
@@ -292,8 +269,6 @@ export class IndexService {
    */
   static async handleLogout() {
     try {
-      console.log('🚪 開始登出流程...');
-
       // 清除會話和 Cookie
       LoginService.logout();
 
@@ -316,8 +291,6 @@ export class IndexService {
       if (this.#encryptedData && this.#encryptedData.encrypted === true) {
         LoginComponent.show();
       }
-
-      console.log('✅ 登出完成，Cookie 已清除');
     } catch (error) {
       console.error('❌ 登出失敗:', error);
     }
@@ -339,7 +312,6 @@ export class IndexService {
 
       // 檢查本地快取
       if (this.#translationCache[cacheKey]) {
-        console.log(`📦 使用本地快取翻譯: ${cacheKey}`);
         return this.#translationCache[cacheKey];
       }
 
@@ -381,11 +353,9 @@ export class IndexService {
       const cacheKey = `index_${language}`;
       if (this.#translationCache[cacheKey]) {
         delete this.#translationCache[cacheKey];
-        console.log(`🗑️ 已清除快取: ${cacheKey}`);
       }
     } else {
       this.#translationCache = {};
-      console.log('🗑️ 已清除所有首頁翻譯快取');
     }
   }
 

@@ -11,8 +11,6 @@ export class DataRepository {
    */
   static async loadEncryptedData(dataPath = './data/resume-data.json') {
     try {
-      console.log('📥 正在載入加密資料...', dataPath);
-      
       const response = await fetch(dataPath);
       
       if (!response.ok) {
@@ -24,7 +22,6 @@ export class DataRepository {
       // 驗證資料格式
       this._validateEncryptedData(encryptedData);
       
-      console.log('✅ 加密資料載入成功');
       return encryptedData;
       
     } catch (error) {
@@ -50,8 +47,6 @@ export class DataRepository {
     if (!data.encrypted) {
       throw new Error('Data is not encrypted');
     }
-    
-    console.log('✅ 資料格式驗證通過');
   }
   
   /**

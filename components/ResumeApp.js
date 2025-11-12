@@ -35,8 +35,6 @@ export default class ResumeApp {
 
       // 渲染專業技能
       this._renderSkills();
-
-      console.log('✅ 頁面渲染完成');
     } catch (error) {
       console.error('❌ 頁面渲染失敗:', error);
       LoadingAndErrorComponent.showError(

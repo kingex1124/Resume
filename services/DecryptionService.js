@@ -14,14 +14,11 @@ export class DecryptionService {
    */
   static async decryptData(password, encryptedData) {
     try {
-      console.log('🔓 開始解密資料...');
-      
       // 1. 驗證必要欄位
       this._validateDecryptionParams(password, encryptedData);
       
       // 2. 從 Base64 轉換鹽
       const salt = this._base64ToUint8Array(encryptedData.salt);
-      console.log('✅ 已解析鹽值');
       
       // 3. 使用密碼和鹽派生密鑰
       const derivedKey = await this._deriveKey(
@@ -29,7 +26,6 @@ export class DecryptionService {
         salt,
         encryptedData.iterations || 100000
       );
-      console.log('✅ 已派生解密密鑰');
       
       // 4. 使用派生的密鑰進行 AES 解密
       const decryptedJson = await this._decryptWithAES(
@@ -37,11 +33,9 @@ export class DecryptionService {
         encryptedData.iv,
         encryptedData.cipherText
       );
-      console.log('✅ 資料解密成功');
       
       // 5. 解析 JSON
       const data = JSON.parse(decryptedJson);
-      console.log('✅ JSON 解析成功');
       
       return {
         success: true,

@@ -47,20 +47,15 @@
          * 初始化應用程式
          */
         async function initializeApp() {
-            console.log('🚀 初始化工作經歷頁面...');
-
             try {
                 // 1. 初始化語言管理器（自動從 URL 或 localStorage 讀取）
                 const language = LanguageManager.initialize();
-                console.log(`📍 檢測到語言: ${language}`);
 
                 // 2. 初始化應用狀態和加載資料
                 await WorkExperienceService.initializeApp(language);
 
                 // 初始化回到最上方按鈕
                 BackToTopButton.initialize();
-
-                console.log('✅ 工作經歷頁面初始化完成');
             } catch (error) {
                 console.error('❌ 應用程式初始化失敗:', error);
                 const errorContainer = document.getElementById('error-container');

@@ -19,7 +19,6 @@ export class i18nService {
       defaultLanguage = 'zh-TW';
     }
     this.#currentLanguage = defaultLanguage;
-    console.log(`✅ i18n 服務已初始化，當前語言: ${this.#currentLanguage}`);
   }
 
   /**
@@ -41,7 +40,6 @@ export class i18nService {
       return false;
     }
     this.#currentLanguage = language;
-    console.log(`🌐 語言已切換為: ${language}`);
     return true;
   }
 
@@ -65,7 +63,6 @@ export class i18nService {
 
     // 檢查快取
     if (this.#translationCache[cacheKey]) {
-      console.log(`📦 使用快取翻譯: ${cacheKey}`);
       return this.#translationCache[cacheKey];
     }
 
@@ -87,8 +84,6 @@ export class i18nService {
 
       // 快取翻譯資料
       this.#translationCache[cacheKey] = translations;
-      console.log(`✅ 翻譯已加載並快取: ${cacheKey}`);
-      
       return translations;
     } catch (error) {
       console.error(`❌ 加載翻譯失敗 (${moduleName}, ${lang}):`, error.message);
@@ -137,11 +132,9 @@ export class i18nService {
           delete this.#translationCache[cacheKey];
         }
       }
-      console.log(`🗑️ 已清除模組快取: ${moduleName}`);
     } else {
       // 清除所有快取
       this.#translationCache = {};
-      console.log('🗑️ 已清除所有翻譯快取');
     }
   }
 

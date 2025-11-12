@@ -35,7 +35,6 @@ export class LanguageManager {
     let urlLanguage = this._getLanguageFromURL();
     if (urlLanguage) {
       this.#currentLanguage = urlLanguage;
-      console.log(`✅ 從 URL 獲取語言: ${urlLanguage}`);
       // 同時保存到 localStorage 以供下次使用
       this._saveLanguageToStorage(urlLanguage);
       this.#isInitialized = true;
@@ -46,7 +45,6 @@ export class LanguageManager {
     const savedLanguage = this._getLanguageFromStorage();
     if (savedLanguage) {
       this.#currentLanguage = savedLanguage;
-      console.log(`✅ 從 localStorage 獲取語言: ${savedLanguage}`);
       // 自動寫入 URL
       this._updateURLParameter(savedLanguage);
       this.#isInitialized = true;
@@ -55,7 +53,6 @@ export class LanguageManager {
 
     // 3️⃣ 使用預設語言
     this.#currentLanguage = this.DEFAULT_LANGUAGE;
-    console.log(`✅ 使用預設語言: ${this.DEFAULT_LANGUAGE}`);
     this._saveLanguageToStorage(this.DEFAULT_LANGUAGE);
     // 自動寫入 URL
     this._updateURLParameter(this.DEFAULT_LANGUAGE);
@@ -95,7 +92,6 @@ export class LanguageManager {
     // 更新 URL（不重新加載頁面）
     this._updateURLParameter(language);
 
-    console.log(`🌐 語言已設置為: ${language}`);
     return true;
   }
 
@@ -139,7 +135,6 @@ export class LanguageManager {
   static _saveLanguageToStorage(language) {
     try {
       localStorage.setItem(this.STORAGE_KEY, language);
-      console.log(`💾 語言已保存到 localStorage: ${language}`);
     } catch (e) {
       console.warn('⚠️ 無法保存到 localStorage:', e.message);
     }
@@ -157,8 +152,6 @@ export class LanguageManager {
       
       // 使用 History API 更新 URL 而不重新加載頁面
       window.history.replaceState({ language }, '', url.toString());
-      
-      console.log(`🔗 URL 已更新: ${url.toString()}`);
     } catch (e) {
       console.warn('⚠️ 無法更新 URL:', e.message);
     }
@@ -212,7 +205,6 @@ export class LanguageManager {
       console.warn('⚠️ 無法清除 localStorage');
     }
     this._updateURLParameter(this.DEFAULT_LANGUAGE);
-    console.log('🔄 語言設置已重置');
   }
 
   /**

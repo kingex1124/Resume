@@ -58,13 +58,6 @@ export class DataFormatValidator {
     );
 
     if (hasEncryptionMarkers) {
-      console.log('✅ 識別為加密資料格式:', {
-        encrypted: data.encrypted,
-        algorithm: data.algorithm,
-        kdf: data.kdf,
-        iterations: data.iterations,
-        timestamp: data.timestamp
-      });
       return true;
     }
 
@@ -103,7 +96,6 @@ export class DataFormatValidator {
       }
     }
 
-    console.log(`✅ 普通資料格式驗證通過 (${requiredFields.length} 個必須欄位)`);
     return true;
   }
 
@@ -138,7 +130,6 @@ export class DataFormatValidator {
       );
     }
 
-    console.log(`✅ 欄位型態驗證通過: ${fieldName} 為 ${expectedType}`);
     return true;
   }
 
@@ -160,9 +151,6 @@ export class DataFormatValidator {
     // 2. 驗證 workExperiences 是陣列
     this.validateFieldType(data, 'workExperiences', 'array');
 
-    console.log(
-      `✅ 工作經歷資料格式驗證通過 (${data.workExperiences.length} 筆)`
-    );
     return true;
   }
 
@@ -198,7 +186,6 @@ export class DataFormatValidator {
     this.validateFieldType(data, 'projects', 'array');
     this.validateFieldType(data, 'certifications', 'array');
 
-    console.log('✅ 個人資料格式驗證通過');
     return true;
   }
 

@@ -95,8 +95,6 @@
         const ResumeApp = (await import('./components/ResumeApp.js')).default;
         const app = new ResumeApp();
         app.renderPage();
-
-        console.log('✅ 履歷頁面初始化完成');
       } catch (error) {
         console.error('❌ 應用程式初始化失敗:', error);
         const errorContainer = document.getElementById('loading-error-container');

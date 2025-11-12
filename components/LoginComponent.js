@@ -42,16 +42,14 @@ export class LoginComponent {
     // 2. 初始化 i18nService
     i18nService.initialize(this.#currentLanguage);
     
-    // 3. 加載登入翻譯
+    // 2. 加載登入翻譯
     const translations = await this._loadLoginTranslations(this.#currentLanguage);
     
-    // 4. 建立登入畫面 HTML（使用翻譯）
+    // 3. 建立登入畫面 HTML（使用翻譯）
     this._buildLoginScreen(translations);
 
-    // 5. 綁定事件
+    // 4. 綁定事件
     this._bindEvents();
-    
-    console.log(`✅ 登入組件初始化完成 (語言: ${this.#currentLanguage})`);
   }
 
   /**
@@ -266,11 +264,9 @@ export class LoginComponent {
     const supportedLanguages = ['zh-TW', 'ja', 'en'];
     
     if (urlLanguage && supportedLanguages.includes(urlLanguage)) {
-      console.log(`✅ 從 URL 偵測到語言: ${urlLanguage}`);
       return urlLanguage;
     }
     
-    console.log('ℹ️ 未在 URL 找到語言參數，使用預設: zh-TW');
     return 'zh-TW';
   }
 
@@ -286,7 +282,6 @@ export class LoginComponent {
       
       // 檢查快取
       if (this.#translationCache[cacheKey]) {
-        console.log(`📦 使用快取翻譯: ${cacheKey}`);
         return this.#translationCache[cacheKey];
       }
 
@@ -295,7 +290,6 @@ export class LoginComponent {
       
       // 快取翻譯資料
       this.#translationCache[cacheKey] = translations;
-      console.log(`✅ 已加載登入翻譯: ${language}`);
       
       return translations;
     } catch (error) {
@@ -324,7 +318,5 @@ export class LoginComponent {
     
     // 重新建立 UI
     this._buildLoginScreen(translations);
-    
-    console.log(`🌐 登入畫面語言已切換為: ${language}`);
   }
 }

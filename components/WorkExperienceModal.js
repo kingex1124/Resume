@@ -28,7 +28,6 @@ export class WorkExperienceModal {
     `;
     
     this._bindModalEvents(onClose);
-    console.log('模態框初始化完成');
   }
 
   /**
@@ -301,14 +300,11 @@ export class WorkExperienceModal {
           this._bindChildProjectClickEvents(childProjects, onChildClick);
         }
       }
-      
-      console.log(`📋 回到上一層對話框: ${previousModal.type}`);
     } else {
       // 堆疊為空，隱藏對話框
       overlay.classList.add('hidden');
       container.classList.add('hidden');
       container.innerHTML = '';
-      console.log('📋 所有對話框已關閉');
     }
   }
 
@@ -328,8 +324,6 @@ export class WorkExperienceModal {
         clickableText.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          
-          console.log(`📋 Child 專案被點擊: ${childProjects[idx].name}`);
           
           // 顯示 child 詳情模態框
           this.showChildModal(childProjects[idx]);

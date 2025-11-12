@@ -33,8 +33,6 @@ export class WorkExperienceTable {
     if (onRowClick) {
       this._bindRowClickEvents(rows, onRowClick);
     }
-    
-    console.log('✅ 工作經歷表格初始化完成');
   }
   
   /**
@@ -159,7 +157,6 @@ export class WorkExperienceTable {
           const rowId = tr.getAttribute('data-id');
           const rowData = rows[idx];
           
-          console.log(`📋 行被點擊: 類型=${rowType}, ID=${rowId}`);
           onRowClick({
             type: rowType,
             id: rowId,

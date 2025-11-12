@@ -25,8 +25,6 @@ export class AuthMiddleware {
    */
   static async authenticate(password, encryptedData, decryptionCallback) {
     try {
-      console.log('🔐 開始身份驗證...');
-      
       // 1. 驗證輸入
       if (!password || password.trim().length === 0) {
         return {
@@ -40,7 +38,6 @@ export class AuthMiddleware {
       const decryptResult = await decryptionCallback(password, encryptedData);
       
       if (!decryptResult.success) {
-        console.log('❌ 身份驗證失敗');
         this._isAuthenticated = false;
         this._password = null;
         
@@ -52,7 +49,6 @@ export class AuthMiddleware {
       }
       
       // 3. 驗證成功 - 只儲存密碼，不儲存解密資料
-      console.log('✅ 身份驗證成功');
       this._isAuthenticated = true;
       this._password = password;
       
@@ -90,7 +86,6 @@ export class AuthMiddleware {
       const password = this._getPasswordFromCookie();
       
       if (!password) {
-        console.log('📭 Cookie 中無密碼，需重新登入');
         return {
           success: false,
           message: 'Cookie 中無有效密碼',
@@ -98,13 +93,10 @@ export class AuthMiddleware {
         };
       }
       
-      console.log('🔄 從 Cookie 復原會話，重新解密資料...');
-      
       // 使用 cookie 中的密碼重新解密
       const decryptResult = await decryptionCallback(password, encryptedData);
       
       if (!decryptResult.success) {
-        console.log('❌ Cookie 密碼無效');
         this._clearPasswordCookie();
         this._isAuthenticated = false;
         this._password = null;
@@ -117,7 +109,6 @@ export class AuthMiddleware {
       }
       
       // 密碼有效，恢復認證狀態（但不存儲解密資料）
-      console.log('✅ 會話復原成功');
       this._isAuthenticated = true;
       this._password = password;
       this._setSessionTimeout();
@@ -157,7 +148,6 @@ export class AuthMiddleware {
    */
   static getPassword() {
     if (!this._isAuthenticated) {
-      console.warn('⚠️ 嘗試在未驗證狀態下取得密碼');
       return null;
     }
     return this._password;
@@ -167,12 +157,10 @@ export class AuthMiddleware {
    * 登出並清除 session
    */
   static logout() {
-    console.log('👋 使用者登出');
     this._isAuthenticated = false;
     this._password = null;
     this._clearPasswordCookie();
     this._clearSessionTimeout();
-    console.log('✅ 認證狀態已清除');
   }
   
   /**
@@ -180,7 +168,6 @@ export class AuthMiddleware {
    */
   static resetSessionTimeout() {
     if (this._isAuthenticated) {
-      console.log('🔄 重設 session 時間');
       this._setSessionTimeout();
     }
   }
@@ -195,7 +182,6 @@ export class AuthMiddleware {
     
     // 設定新的 timeout
     this._sessionTimeout = setTimeout(() => {
-      console.log('⏰ Session 已過期');
       this.logout();
       
       // 觸發 session 過期事件
@@ -235,7 +221,6 @@ export class AuthMiddleware {
   static _setPasswordCookie(password) {
     try {
       document.cookie = `${this._cookieName}=${encodeURIComponent(password)};${this._cookieOptions}`;
-      console.log('✅ 密碼已儲存到 cookie');
     } catch (error) {
       console.error('❌ 無法儲存密碼到 cookie:', error.message);
     }
@@ -256,7 +241,6 @@ export class AuthMiddleware {
         let cookie = cookieArray[i].trim();
         if (cookie.startsWith(name)) {
           const password = cookie.substring(name.length);
-          console.log('✅ 已從 cookie 取得密碼');
           return password;
         }
       }
@@ -282,8 +266,6 @@ export class AuthMiddleware {
       
       // 方法 3: 用各種路徑嘗試清除（以防多層路徑問題）
       document.cookie = `${this._cookieName}=;max-age=0;path=/;`;
-      
-      console.log('✅ Cookie 已清除');
     } catch (error) {
       console.error('❌ 無法清除 cookie:', error.message);
     }

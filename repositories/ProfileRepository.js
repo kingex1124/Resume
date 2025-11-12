@@ -10,14 +10,12 @@ export class ProfileRepository {
 
       // 檢查是否為加密資料格式
       if (DataFormatValidator.isEncryptedDataFormat(data)) {
-        console.log('🔐 偵測到加密資料格式，直接返回');
         return data;
       }
 
       // 驗證資料格式
       this._validateProfileData(data);
 
-      console.log('✅ 履歷個人資訊資料載入成功');
       return data;
     } catch (error) {
       console.error('❌ 載入失敗:', error.message);

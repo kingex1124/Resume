@@ -47,8 +47,6 @@ export class LoginService {
         };
       }
 
-      console.log('🔐 開始登入流程...');
-
       // 使用 AuthMiddleware 進行身份驗證並解密
       const result = await AuthMiddleware.authenticate(
         password,
@@ -57,14 +55,12 @@ export class LoginService {
       );
 
       if (result.success) {
-        console.log('✅ 登入成功，資料已解密');
         return {
           success: true,
           data: result.data,
           message: '登入成功'
         };
       } else {
-        console.warn('⚠️ 登入失敗:', result.message);
         return {
           success: false,
           data: null,
@@ -98,22 +94,18 @@ export class LoginService {
         };
       }
 
-      console.log('🔄 嘗試從 Cookie 還原會話...');
-
       const result = await AuthMiddleware.restoreSessionFromCookie(
         encryptedData,
         DecryptionService.decryptData.bind(DecryptionService)
       );
 
       if (result.success) {
-        console.log('✅ 會話已還原');
         return {
           success: true,
           data: result.data,
           message: '會話已還原'
         };
       } else {
-        console.log('ℹ️ 無有效的會話 Cookie');
         return {
           success: false,
           data: null,
@@ -135,9 +127,7 @@ export class LoginService {
    */
   static logout() {
     try {
-      console.log('🔐 執行登出流程...');
       AuthMiddleware.logout();
-      console.log('✅ 登出成功');
       return {
         success: true,
         message: '登出成功'

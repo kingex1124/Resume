@@ -15,7 +15,6 @@ export class WorkExperienceRepository {
   static async loadWorkExperienceData(language = 'zh-TW') {
     try {
       const dataPath = this._getDataPath(language);
-      console.log('📥 正在載入工作經歷資料...', dataPath);
       
       const response = await fetch(dataPath);
       
@@ -27,14 +26,12 @@ export class WorkExperienceRepository {
       
       // 🔐 使用 DataFormatValidator 檢查是否為加密資料格式
       if (DataFormatValidator.isEncryptedDataFormat(data)) {
-        console.log('🔐 偵測到加密資料格式，直接返回');
         return data;
       }
       
       // ✅ 非加密資料，使用 DataFormatValidator 驗證普通資料格式
       DataFormatValidator.validateWorkExperienceData(data);
       
-      console.log('✅ 工作經歷資料載入成功');
       return data;
       
     } catch (error) {
