@@ -5,6 +5,7 @@
 
 import { ResumeService } from '../services/ResumeService.js';
 import { LoadingAndErrorComponent } from './LoadingAndErrorComponent.js';
+import { LanguageManager } from '../i18n/LanguageManager.js';
 
 export default class ResumeApp {
   /**
@@ -204,7 +205,9 @@ export default class ResumeApp {
       // 第一層：公司資訊 (無項目符號，用 div)
       html += `<div class="work-experience-item work-level">`;
       html += `<div class="company-info">`;
-      html += `<a href="${this._escapeHtml(portfolio.url)}" class="company-name">${this._escapeHtml(workExp.company.name)}</a>`;
+      // 使用 LanguageManager 正確處理相對路徑，支援 GitHub Pages 的 /Resume/ 前綴
+      const companyUrl = LanguageManager.generateLanguageURL(this._escapeHtml(portfolio.url));
+      html += `<a href="${companyUrl}" class="company-name">${this._escapeHtml(workExp.company.name)}</a>`;
       html += `<span class="company-location">${this._escapeHtml(workExp.company.location)}</span>`;
       html += `</div>`;
 
@@ -235,7 +238,9 @@ export default class ResumeApp {
 
           // 第二層：專案名稱 (第一層項目符號)
           html += `<li class="work-experience-item project-level">`;
-          html += `<a href="${this._escapeHtml(portfolioProject.url)}" class="project-name">${this._escapeHtml(workExpProject.name)}</a>`;
+          // 使用 LanguageManager 正確處理相對路徑，支援 GitHub Pages 的 /Resume/ 前綴
+          const projectUrl = LanguageManager.generateLanguageURL(this._escapeHtml(portfolioProject.url));
+          html += `<a href="${projectUrl}" class="project-name">${this._escapeHtml(workExpProject.name)}</a>`;
 
           // 第三層：專案項目內容（嵌套的 ul，第二層項目符號）
           if (portfolioProject.items && portfolioProject.items.length > 0) {

@@ -166,7 +166,7 @@ export class LanguageManager {
 
   /**
    * 生成帶有語言參數的 URL
-   * @param {string} path - 頁面路徑 (e.g., 'portfolio.html')
+   * @param {string} path - 頁面路徑 (e.g., 'work-experience.html' 或 'work-experience.html?id=C008')
    * @param {string} language - 語言代碼 (可選，預設使用當前語言)
    * @returns {string} 完整 URL
    */
@@ -175,7 +175,17 @@ export class LanguageManager {
     const baseURL = `${window.location.origin}${window.location.pathname}`;
     const baseDir = baseURL.substring(0, baseURL.lastIndexOf('/') + 1);
     
-    return `${baseDir}${path}?${this.URL_PARAM_NAME}=${lang}`;
+    // 移除 path 開頭的斜線（避免雙斜線）
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    
+    // 檢查 path 是否已包含查詢參數
+    if (cleanPath.includes('?')) {
+      // 如果已有查詢參數，直接添加 lang 參數（避免重複）
+      return `${baseDir}${cleanPath}&${this.URL_PARAM_NAME}=${lang}`;
+    } else {
+      // 如果沒有查詢參數，添加新的查詢參數
+      return `${baseDir}${cleanPath}?${this.URL_PARAM_NAME}=${lang}`;
+    }
   }
 
   /**
