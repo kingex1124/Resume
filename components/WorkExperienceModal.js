@@ -3,6 +3,8 @@
  * 階層式對話框元件：支援 parent 詳情、child 詳情等多層級
  */
 
+import { LinkCardModule } from './LinkCardModule.js';
+
 export class WorkExperienceModal {
   static currentStack = []; // 對話框堆疊，儲存 { type, content }
 
@@ -205,11 +207,22 @@ export class WorkExperienceModal {
    * @private
    */
   static _buildListSection(items) {
+    // 注入 Link Card 樣式（第一次調用時）
+    LinkCardModule.injectStyles();
+    
     const html = items
-      .map(item => {
+      .map((item, idx) => {
         const bullet = this._getBulletByLevel(item.level);
         const indent = `margin-left: ${(item.level - 1) * 20}px`;
-        return `<li style="${indent}"><span class="bullet">${bullet}</span> ${item.text}</li>`;
+        
+        // 檢查是否為純網址（且層級 >= 2）
+        if (item.level >= 2 && LinkCardModule.isPureURL(item.text)) {
+          const linkCardHTML = LinkCardModule._buildLinkCardHTML(item.text);
+          return `<li style="${indent}" data-level="${item.level}"><span class="bullet">${bullet}</span> ${linkCardHTML}</li>`;
+        }
+        
+        // 普通項目
+        return `<li style="${indent}" data-level="${item.level}"><span class="bullet">${bullet}</span> ${item.text}</li>`;
       })
       .join('');
     
@@ -271,6 +284,9 @@ export class WorkExperienceModal {
     container.classList.remove('hidden');
     
     this._bindModalEvents();
+    
+    // 異步載入 Link Card 的 metadata
+    LinkCardModule.loadAllLinkCardMetadata(container);
   }
 
   /**
