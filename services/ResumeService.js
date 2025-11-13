@@ -360,6 +360,12 @@ export class ResumeService {
           }
         }
         else {
+          // 需要重新登入：重新初始化 LoginComponent（確保清除舊密碼）
+          LoginComponent.initialize({
+            containerId: 'loginScreen',
+            onLogin: (password) => this.handleLogin(password),
+            onCancel: () => { }
+          });
           LoginComponent.show();
           return;
         }

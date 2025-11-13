@@ -73,6 +73,11 @@ export class WorkExperienceService {
           return this._sortByPeriodStart(parentExps);
         } else {
           // 沒有有效的 Cookie，顯示登入介面
+          LoginComponent.initialize({
+            containerId: 'loginScreen',
+            onLogin: (password) => this.handleLogin(password),
+            onCancel: () => { }
+          });
           LoginComponent.show();
           return [];
         }
@@ -449,15 +454,15 @@ export class WorkExperienceService {
       // 2️⃣ 加載工作經歷資料（支援加密/非加密）
       const sortedParentExps = await this.initializeAndSortWorkExperiences(finalLanguage);
 
+      // 如果沒有取得任何排序後的父項目，直接返回當前應用狀態
+      if (!sortedParentExps) {
+        return this.#appState;
+      }
+
       // 3️⃣ 先初始化模態框（無論是否需要登入都需要）
       WorkExperienceModal.initialize({
         containerId: 'modal-container'
       });
-
-      if (!sortedParentExps) {
-        LoginComponent.show();
-        return this.#appState;
-      }
 
       // 4️⃣ 準備主列表行資料
       const sortedRows = this.prepareMainTableRows(sortedParentExps);
