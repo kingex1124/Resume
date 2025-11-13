@@ -31,78 +31,135 @@ export class ResumeService {
   static #encryptedProfileData = null;
   static #encryptedPortfolioData = null;
 
+  // ============================================
+  // 共用私有方法
+  // ============================================
+
+  /**
+   * 解密多個資料源（共用方法）
+   * @param {Function} decryptFn - 解密函數 (LoginService.login 或 LoginService.restoreSession)
+   * @param {string|null} password - 密碼（restoreSession 時為 null）
+   * @returns {Promise<{success: boolean, data: Object, failedCount: number}>}
+   * @private
+   */
+  static async _decryptMultipleData(decryptFn, password = null) {
+    const decryptedData = {};
+    let successCount = 0;
+    let totalEncrypted = 0;
+    const errors = [];
+
+    // 嘗試解密 profile 資料
+    if (this.#encryptedProfileData) {
+      totalEncrypted++;
+      try {
+        const result = password
+          ? await decryptFn(password, this.#encryptedProfileData)
+          : await decryptFn(this.#encryptedProfileData);
+        if (result.success) {
+          decryptedData.profile = result.data;
+          successCount++;
+        } else {
+          errors.push(`Profile: ${result.message}`);
+        }
+      } catch (error) {
+        errors.push(`Profile: ${error.message}`);
+      }
+    }
+
+    // 嘗試解密 portfolio 資料
+    if (this.#encryptedPortfolioData) {
+      totalEncrypted++;
+      try {
+        const result = password
+          ? await decryptFn(password, this.#encryptedPortfolioData)
+          : await decryptFn(this.#encryptedPortfolioData);
+        if (result.success) {
+          decryptedData.portfolio = result.data;
+          successCount++;
+        } else {
+          errors.push(`Portfolio: ${result.message}`);
+        }
+      } catch (error) {
+        errors.push(`Portfolio: ${error.message}`);
+      }
+    }
+
+    // 嘗試解密 workExperience 資料
+    if (this.#encryptedWorkExperienceData) {
+      totalEncrypted++;
+      try {
+        const result = password
+          ? await decryptFn(password, this.#encryptedWorkExperienceData)
+          : await decryptFn(this.#encryptedWorkExperienceData);
+        if (result.success) {
+          decryptedData.workExperience = result.data;
+          successCount++;
+        } else {
+          errors.push(`WorkExperience: ${result.message}`);
+        }
+      } catch (error) {
+        errors.push(`WorkExperience: ${error.message}`);
+      }
+    }
+
+    return {
+      success: successCount === totalEncrypted && totalEncrypted > 0,
+      data: decryptedData,
+      failedCount: totalEncrypted - successCount,
+      errors: errors,
+      totalEncrypted: totalEncrypted
+    };
+  }
+
   /**
    * 初始化履歷資料
    * 
    * 流程：
    * 1. 初始化語言管理器
    * 2. 並行載入 Profile、Portfolio、WorkExperience 資料
-   * 3. 如果 WorkExperience 被加密，檢查 Cookie 或顯示登入
-   * 4. 初始化導覽和 UI 元件
+   * 3. 快取加密資料
+   * 4. 如果有加密資料，嘗試從 Cookie 還原會話，失敗則顯示登入
+   * 5. 初始化 UI
    * 
    * @param {string} language - 語言代碼
    * @returns {Promise<Object>} 應用狀態物件
    */
   static async initializeApp(language = 'zh-TW') {
     try {
-      // 1. 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
+      // 1️⃣ 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
       const detectedLanguage = LanguageManager.initialize();
       const finalLanguage = detectedLanguage || language || 'zh-TW';
-
       this.#appState.currentLanguage = finalLanguage;
-
-      // 初始化 i18n 服務
       i18nService.initialize(finalLanguage);
 
-      // 1. 並行載入三種資料
+      // 2️⃣ 並行載入三種資料
       const [profileData, portfolioData, workExpData] = await Promise.all([
         ProfileRepository.loadProfileData(finalLanguage),
         PortfolioRepository.loadPortfolioData(finalLanguage),
         WorkExperienceRepository.loadWorkExperienceData(finalLanguage)
       ]);
 
-      this.#appState.profileData = profileData;
-      this.#appState.portfolioData = portfolioData;
-      this.#appState.workExperienceData = workExpData;
+      // 3️⃣ 快取資料（區分加密/非加密）
+      this._cacheLoadedData(profileData, portfolioData, workExpData);
 
-      // 快取加密資料（如果被加密）
-      if (profileData.encrypted === true) {
-        this.#encryptedProfileData = profileData;
-      }
-      if (portfolioData.encrypted === true) {
-        this.#encryptedPortfolioData = portfolioData;
-      }
-      if (workExpData.encrypted === true) {
-        this.#encryptedWorkExperienceData = workExpData;
-      }
-
-      // 2. 初始化登入元件
+      // 4️⃣ 初始化登入元件
       LoginComponent.initialize({
         containerId: 'loginScreen',
         onLogin: (password) => this.handleLogin(password),
         onCancel: () => { }
       });
 
-      // 3. 檢查是否有任何加密資料需要解密
-      const hasEncryptedData = profileData.encrypted === true ||
-        portfolioData.encrypted === true ||
-        workExpData.encrypted === true;
+      // 5️⃣ 檢查是否有加密資料需要解密
+      const hasEncryptedData = this.#encryptedProfileData ||
+        this.#encryptedPortfolioData ||
+        this.#encryptedWorkExperienceData;
 
       if (hasEncryptedData) {
         // 優先從 Cookie 還原會話
         const decryptResult = await this.tryRestoreSession();
 
         if (decryptResult.success) {
-          // 更新已解密的資料
-          if (decryptResult.data.profile) {
-            this.#appState.profileData = decryptResult.data.profile;
-          }
-          if (decryptResult.data.portfolio) {
-            this.#appState.portfolioData = decryptResult.data.portfolio;
-          }
-          if (decryptResult.data.workExperience) {
-            this.#appState.workExperienceData = decryptResult.data.workExperience;
-          }
+          this._updateAppStateWithDecryptedData(decryptResult.data);
           return await this._initializeUI();
         } else {
           LoginComponent.show();
@@ -114,9 +171,56 @@ export class ResumeService {
       }
     } catch (error) {
       console.error('❌ 初始化失敗:', error.message);
-      // 不呼叫 hideLoading，因為還沒設置
       console.error('詳細錯誤:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 快取載入的資料（區分加密/非加密）
+   * @param {Object} profileData - Profile 資料
+   * @param {Object} portfolioData - Portfolio 資料
+   * @param {Object} workExpData - WorkExperience 資料
+   * @private
+   */
+  static _cacheLoadedData(profileData, portfolioData, workExpData) {
+    // 快取加密資料
+    if (profileData.encrypted === true) {
+      this.#encryptedProfileData = profileData;
+    } else {
+      this.#appState.profileData = profileData;
+      this.#encryptedProfileData = null;
+    }
+
+    if (portfolioData.encrypted === true) {
+      this.#encryptedPortfolioData = portfolioData;
+    } else {
+      this.#appState.portfolioData = portfolioData;
+      this.#encryptedPortfolioData = null;
+    }
+
+    if (workExpData.encrypted === true) {
+      this.#encryptedWorkExperienceData = workExpData;
+    } else {
+      this.#appState.workExperienceData = workExpData;
+      this.#encryptedWorkExperienceData = null;
+    }
+  }
+
+  /**
+   * 用解密後的資料更新應用狀態
+   * @param {Object} decryptedData - 解密後的資料 { profile?, portfolio?, workExperience? }
+   * @private
+   */
+  static _updateAppStateWithDecryptedData(decryptedData) {
+    if (decryptedData.profile) {
+      this.#appState.profileData = decryptedData.profile;
+    }
+    if (decryptedData.portfolio) {
+      this.#appState.portfolioData = decryptedData.portfolio;
+    }
+    if (decryptedData.workExperience) {
+      this.#appState.workExperienceData = decryptedData.workExperience;
     }
   }
 
@@ -126,83 +230,27 @@ export class ResumeService {
    */
   static async handleLogin(password) {
     try {
-      const decryptedData = {};
-      let successCount = 0;
-      let totalEncrypted = 0;
+      // 使用共用方法解密所有加密資料
+      const decryptResult = await this._decryptMultipleData(
+        LoginService.login.bind(LoginService),
+        password
+      );
 
-      // 嘗試解密 profile 資料
-      if (this.#encryptedProfileData) {
-        totalEncrypted++;
-        const result = await LoginService.login(password, this.#encryptedProfileData);
-        if (result.success) {
-          decryptedData.profile = result.data;
-          successCount++;
-        } else {
-          throw new Error('Profile 資料解密失敗: ' + result.message);
-        }
+      if (!decryptResult.success) {
+        const errorMsg = decryptResult.errors.length > 0
+          ? decryptResult.errors.join('; ')
+          : '解密失敗';
+        throw new Error(errorMsg);
       }
 
-      // 嘗試解密 portfolio 資料
-      if (this.#encryptedPortfolioData) {
-        totalEncrypted++;
-        const result = await LoginService.login(password, this.#encryptedPortfolioData);
-        if (result.success) {
-          decryptedData.portfolio = result.data;
-          successCount++;
-        } else {
-          throw new Error('Portfolio 資料解密失敗: ' + result.message);
-        }
-      }
+      // 更新應用狀態
+      this._updateAppStateWithDecryptedData(decryptResult.data);
 
-      // 嘗試解密 workExperience 資料
-      if (this.#encryptedWorkExperienceData) {
-        totalEncrypted++;
-        const result = await LoginService.login(password, this.#encryptedWorkExperienceData);
-        if (result.success) {
-          decryptedData.workExperience = result.data;
-          successCount++;
-        } else {
-          throw new Error('WorkExperience 資料解密失敗: ' + result.message);
-        }
-      }
+      // 初始化 UI
+      await this._initializeUI();
 
-      // 檢查是否所有加密資料都成功解密
-      if (successCount === totalEncrypted && totalEncrypted > 0) {
-
-        // 更新應用狀態
-        if (decryptedData.profile) {
-          this.#appState.profileData = decryptedData.profile;
-        }
-        if (decryptedData.portfolio) {
-          this.#appState.portfolioData = decryptedData.portfolio;
-        }
-        if (decryptedData.workExperience) {
-          this.#appState.workExperienceData = decryptedData.workExperience;
-        }
-
-        await this._initializeUI();
-
-        // 立即重繪頁面，確保已解密的資料顯示出來（避免使用者需要手動重新整理）
-        try {
-          const ResumeApp = (await import('../components/ResumeApp.js')).default;
-          const app = new ResumeApp();
-          app.renderPage();
-        } catch (err) {
-          console.error('❌ 無法重繪頁面:', err);
-        }
-      } else if (totalEncrypted === 0) {
-        // 沒有加密資料需要解密
-        await this._initializeUI();
-
-        // 即使沒有加密資料，也確保頁面被正確渲染
-        try {
-          const ResumeApp = (await import('../components/ResumeApp.js')).default;
-          const app = new ResumeApp();
-          app.renderPage();
-        } catch (err) {
-          console.error('❌ 無法重繪頁面:', err);
-        }
-      }
+      // 重繪頁面
+      await this._renderPage();
     } catch (error) {
       LoginComponent.showError('登入失敗: ' + error.message);
       console.error('❌ 登入錯誤:', error);
@@ -211,44 +259,17 @@ export class ResumeService {
 
   /**
    * 嘗試從 Cookie 還原會話
-   * @param {Object} encryptedData - 加密資料（可選，預設使用緩存的加密資料）
    * @returns {Promise<Object>}
    */
-  static async tryRestoreSession(encryptedData = null) {
+  static async tryRestoreSession() {
     try {
-      const decryptedData = {};
-      let successCount = 0;
+      // 使用共用方法從 Cookie 還原所有加密資料
+      const decryptResult = await this._decryptMultipleData(
+        LoginService.restoreSession.bind(LoginService)
+      );
 
-      // 嘗試還原 profile 資料
-      if (this.#encryptedProfileData) {
-        const result = await LoginService.restoreSession(this.#encryptedProfileData);
-        if (result.success) {
-          decryptedData.profile = result.data;
-          successCount++;
-        }
-      }
-
-      // 嘗試還原 portfolio 資料
-      if (this.#encryptedPortfolioData) {
-        const result = await LoginService.restoreSession(this.#encryptedPortfolioData);
-        if (result.success) {
-          decryptedData.portfolio = result.data;
-          successCount++;
-        }
-      }
-
-      // 嘗試還原 workExperience 資料
-      if (this.#encryptedWorkExperienceData) {
-        const result = await LoginService.restoreSession(this.#encryptedWorkExperienceData);
-        if (result.success) {
-          decryptedData.workExperience = result.data;
-          successCount++;
-        }
-      }
-
-      // 檢查是否至少還原了一個資料源
-      if (successCount > 0) {
-        return { success: true, data: decryptedData };
+      if (decryptResult.success) {
+        return { success: true, data: decryptResult.data };
       } else {
         return { success: false, message: '無有效會話' };
       }
@@ -300,6 +321,20 @@ export class ResumeService {
   }
 
   /**
+   * 重繪頁面（避免重複代碼）
+   * @private
+   */
+  static async _renderPage() {
+    try {
+      const ResumeApp = (await import('../components/ResumeApp.js')).default;
+      const app = new ResumeApp();
+      app.renderPage();
+    } catch (err) {
+      console.error('❌ 無法重繪頁面:', err);
+    }
+  }
+
+  /**
    * 語言切換事件處理
    * @param {string} language - 新語言代碼
    */
@@ -318,49 +353,21 @@ export class ResumeService {
         WorkExperienceRepository.loadWorkExperienceData(language)
       ]);
 
-      // 快取新語言的加密資料（如果被加密）
-      if (profileData.encrypted === true) {
-        this.#encryptedProfileData = profileData;
-      } else {
-        this.#encryptedProfileData = null;
-        this.#appState.profileData = profileData;
-      }
-
-      if (portfolioData.encrypted === true) {
-        this.#encryptedPortfolioData = portfolioData;
-      } else {
-        this.#encryptedPortfolioData = null;
-        this.#appState.portfolioData = portfolioData;
-      }
-
-      if (workExpData.encrypted === true) {
-        this.#encryptedWorkExperienceData = workExpData;
-      } else {
-        this.#encryptedWorkExperienceData = null;
-        this.#appState.workExperienceData = workExpData;
-      }
+      // 快取新語言的資料（區分加密/非加密）
+      this._cacheLoadedData(profileData, portfolioData, workExpData);
 
       // 檢查是否有加密資料需要重新解密
-      const hasEncryptedData = profileData.encrypted === true ||
-        portfolioData.encrypted === true ||
-        workExpData.encrypted === true;
+      const hasEncryptedData = this.#encryptedProfileData ||
+        this.#encryptedPortfolioData ||
+        this.#encryptedWorkExperienceData;
 
       if (hasEncryptedData) {
         const decryptResult = await this.tryRestoreSession();
 
         if (decryptResult.success) {
-          if (decryptResult.data.profile) {
-            this.#appState.profileData = decryptResult.data.profile;
-          }
-          if (decryptResult.data.portfolio) {
-            this.#appState.portfolioData = decryptResult.data.portfolio;
-          }
-          if (decryptResult.data.workExperience) {
-            this.#appState.workExperienceData = decryptResult.data.workExperience;
-          }
-        }
-        else {
-          // 需要重新登入：重新初始化 LoginComponent（確保清除舊密碼）
+          this._updateAppStateWithDecryptedData(decryptResult.data);
+        } else {
+          // 需要重新登入
           LoginComponent.initialize({
             containerId: 'loginScreen',
             onLogin: (password) => this.handleLogin(password),
@@ -369,16 +376,19 @@ export class ResumeService {
           LoginComponent.show();
           return;
         }
+      } else {
+        // 非加密，直接更新應用狀態
+        this.#appState.profileData = profileData;
+        this.#appState.portfolioData = portfolioData;
+        this.#appState.workExperienceData = workExpData;
       }
 
       // 重新載入翻譯並更新頁面
       const translations = await this.getResumeTranslations(language);
       this.#appState.translations = translations;
 
-      // 無刷新更新：觸發 renderPage 重新渲染
-      const ResumeApp = (await import('../components/ResumeApp.js')).default;
-      const app = new ResumeApp();
-      app.renderPage();
+      // 重繪頁面
+      await this._renderPage();
 
       // 更新 URL（不刷新頁面）
       const url = new URL(window.location);
@@ -397,25 +407,19 @@ export class ResumeService {
       // 清除會話和 Cookie
       LoginService.logout();
 
-      // 保留應用狀態中的加密資料，但重置已解密的資料
-      if (this.#encryptedProfileData) {
-        this.#appState.profileData = this.#encryptedProfileData;
-      }
-      if (this.#encryptedPortfolioData) {
-        this.#appState.portfolioData = this.#encryptedPortfolioData;
-      }
-      if (this.#encryptedWorkExperienceData) {
-        this.#appState.workExperienceData = this.#encryptedWorkExperienceData;
-      }
+      // 重置應用狀態為加密資料
+      this.#appState.profileData = this.#encryptedProfileData || null;
+      this.#appState.portfolioData = this.#encryptedPortfolioData || null;
+      this.#appState.workExperienceData = this.#encryptedWorkExperienceData || null;
 
-      // 隱藏主要內容，顯示登入畫面
+      // 隱藏主要內容
       const mainContent = document.getElementById('resume-container');
       if (mainContent) {
         mainContent.style.display = 'none';
         mainContent.classList.add('hidden');
       }
 
-      // 清除不必要的 DOM 元素
+      // 清除 DOM 元素
       const app = document.getElementById('resume-app');
       if (app) {
         app.innerHTML = '';
