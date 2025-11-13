@@ -454,6 +454,11 @@ export class WorkExperienceService {
         containerId: 'modal-container'
       });
 
+      if(!sortedParentExps)
+      {
+        LoginComponent.show();
+        return this.#appState;
+      }
       // 4️⃣ 準備主列表行資料
       const sortedRows = this.prepareMainTableRows(sortedParentExps);
       
