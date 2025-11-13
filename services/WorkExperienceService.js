@@ -45,7 +45,7 @@ export class WorkExperienceService {
     try {
       // 1. 從 WorkExperienceRepository 載入資料
       const data = await WorkExperienceRepository.loadWorkExperienceData(language);
-      
+
       // 存儲加密資料供後續使用
       this.#encryptedData = data;
 
@@ -53,14 +53,14 @@ export class WorkExperienceService {
       LoginComponent.initialize({
         containerId: 'loginScreen',
         onLogin: (password) => this.handleLogin(password),
-        onCancel: () => {}
+        onCancel: () => { }
       });
 
       const tableContainer = document.getElementById('work-experience-table');
       if (tableContainer) {
         LoginComponent.hide();
       }
-      
+
       // 3. 只有加密資料才需要檢查 Cookie
       if (data.encrypted === true) {
         // 優先嘗試從 Cookie 還原會話
@@ -107,7 +107,7 @@ export class WorkExperienceService {
       if (result.success) {
         // 提取 parent 工作經歷
         const parentExps = WorkExperienceRepository.getParentWorkExperiences(result.data);
-        
+
         // 使用共用方法綁定資料
         await this._bindWorkExperienceData(parentExps);
       } else {
@@ -150,13 +150,13 @@ export class WorkExperienceService {
       loginScreen.style.display = 'none !important';
       loginScreen.classList.add('hidden');
     }
-    
+
     // 4️⃣ 顯示主內容和導覽欄
     const mainContent = document.querySelector('main');
     if (mainContent) {
       mainContent.style.display = 'block';
     }
-    
+
     const navBar = document.getElementById('navigation');
     if (navBar) {
       navBar.style.display = 'block';
@@ -225,7 +225,7 @@ export class WorkExperienceService {
       return dateB - dateA; // 降序排列
     });
   }
-  
+
   /**
    * 解析期間日期字串 (e.g., "2025.3" -> 20250300)
    * @param {string} dateStr - 日期字串
@@ -236,7 +236,7 @@ export class WorkExperienceService {
     const [year, month] = dateStr.split('.');
     return parseInt(year + (month.padStart(2, '0') + '00'));
   }
-  
+
   /**
    * 準備主列表顯示的行資料（parent 和 child 混合）
    * @param {Array} sortedParentExps - 排序後的 parent 工作經歷
@@ -244,18 +244,18 @@ export class WorkExperienceService {
    */
   static prepareMainTableRows(sortedParentExps) {
     const rows = [];
-    
+
     for (const parentExp of sortedParentExps) {
       // 先加入 parent 行
       rows.push({
         type: 'parent',
         data: parentExp
       });
-      
+
       // 再加入排序後的 child 專案行
       if (parentExp.projects && parentExp.projects.length > 0) {
         const sortedProjects = this._sortProjectsByEndDate(parentExp.projects);
-        
+
         for (const project of sortedProjects) {
           if (project.type === 'child') {
             rows.push({
@@ -267,10 +267,10 @@ export class WorkExperienceService {
         }
       }
     }
-    
+
     return rows;
   }
-  
+
   /**
    * 按結束日期排序專案（最近的在上）
    * @param {Array} projects - 專案陣列
@@ -282,14 +282,14 @@ export class WorkExperienceService {
       // 如果有多個 periods，取最後一個的 end 日期
       const endDateA = this._getLatestEndDate(a.periods);
       const endDateB = this._getLatestEndDate(b.periods);
-      
+
       const numA = this._parsePeriodDate(endDateA);
       const numB = this._parsePeriodDate(endDateB);
-      
+
       return numB - numA; // 降序
     });
   }
-  
+
   /**
    * 取得最近的結束日期
    * @param {Array} periods - 期間陣列
@@ -298,10 +298,10 @@ export class WorkExperienceService {
    */
   static _getLatestEndDate(periods) {
     if (!periods || periods.length === 0) return '2000.1';
-    
+
     let latestDate = periods[0].end;
     let latestNum = this._parsePeriodDate(latestDate);
-    
+
     for (const period of periods.slice(1)) {
       const currentNum = this._parsePeriodDate(period.end);
       if (currentNum > latestNum) {
@@ -309,10 +309,10 @@ export class WorkExperienceService {
         latestDate = period.end;
       }
     }
-    
+
     return latestDate;
   }
-  
+
   /**
    * 取得 Parent 工作經歷的所有 child 專案
    * @param {Object} parentExp - Parent 工作經歷物件
@@ -320,11 +320,11 @@ export class WorkExperienceService {
    */
   static getParentChildProjects(parentExp) {
     if (!parentExp.projects) return [];
-    
+
     const childProjects = parentExp.projects.filter(p => p.type === 'child');
     return this._sortProjectsByEndDate(childProjects);
   }
-  
+
   /**
    * 驗證 ID 是否為有效的工作經歷 ID（parent）
    * @param {string} id - ID 字串
@@ -334,7 +334,7 @@ export class WorkExperienceService {
     // Parent ID 格式：C001, C002, ... (字母 + 數字)
     return /^C\d{3}$/.test(id);
   }
-  
+
   /**
    * 驗證 ID 是否為有效的專案 ID（child）
    * @param {string} id - ID 字串
@@ -344,7 +344,7 @@ export class WorkExperienceService {
     // Child ID 格式：C001P001, C001P002, ... (字母 + 數字 + P + 數字)
     return /^C\d{3}P\d{3}$/.test(id);
   }
-  
+
   /**
    * 從 child ID 提取 parent ID
    * @param {string} childId - Child ID
@@ -367,7 +367,7 @@ export class WorkExperienceService {
   static async loadWorkExperienceTranslations(language) {
     try {
       const cacheKey = `work-experience_${language}`;
-      
+
       // 檢查本地快取
       if (this.#translationCache[cacheKey]) {
         return this.#translationCache[cacheKey];
@@ -375,10 +375,10 @@ export class WorkExperienceService {
 
       // 從 i18nService 加載翻譯
       const translations = await i18nService.loadModuleTranslations('work-experience', language);
-      
+
       // 快取翻譯資料
       this.#translationCache[cacheKey] = translations;
-      
+
       return translations;
     } catch (error) {
       console.error('❌ 加載工作經歷翻譯失敗:', error.message);
@@ -393,7 +393,7 @@ export class WorkExperienceService {
    */
   static async getWorkExperienceUIText(language) {
     const translations = await this.loadWorkExperienceTranslations(language);
-    
+
     return {
       title: translations?.workExperience?.title || '工作經歷',
       period: translations?.workExperience?.period || '期間',
@@ -442,36 +442,36 @@ export class WorkExperienceService {
       // 1️⃣ 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
       const detectedLanguage = LanguageManager.initialize();
       const finalLanguage = detectedLanguage || language || 'zh-TW';
-      
+
       i18nService.initialize(finalLanguage);
       this.#appState.currentLanguage = finalLanguage;
 
       // 2️⃣ 加載工作經歷資料（支援加密/非加密）
       const sortedParentExps = await this.initializeAndSortWorkExperiences(finalLanguage);
-      
+
       // 3️⃣ 先初始化模態框（無論是否需要登入都需要）
       WorkExperienceModal.initialize({
         containerId: 'modal-container'
       });
 
-      if(!sortedParentExps)
-      {
+      if (!sortedParentExps) {
         LoginComponent.show();
         return this.#appState;
       }
+
       // 4️⃣ 準備主列表行資料
       const sortedRows = this.prepareMainTableRows(sortedParentExps);
-      
+
       // 5️⃣ 加載 UI 翻譯
       const translations = await this.getWorkExperienceUIText(finalLanguage);
       this.#appState.translations = translations;
-      
+
       // 6️⃣ 構建 parent 資料索引
       const parentExperiences = {};
       sortedParentExps.forEach(exp => {
         parentExperiences[exp.id] = exp;
       });
-      
+
       // 7️⃣ 更新應用狀態
       this.#appState.sortedRows = sortedRows;
       this.#appState.parentExperiences = parentExperiences;
@@ -524,7 +524,7 @@ export class WorkExperienceService {
   static async refreshAppData(language) {
     // 清除舊語言的翻譯快取
     this.clearTranslationCache(language);
-    
+
     // 重新初始化
     return this.initializeApp(language);
   }
@@ -557,10 +557,10 @@ export class WorkExperienceService {
     if (type === 'parent') {
       // data 是整個 rowData 物件 { type: 'parent', data: parentExpObject }
       const parentExp = data.data || appState.parentExperiences[id];
-      
+
       if (parentExp) {
         const childProjects = this.getParentChildProjects(parentExp);
-        
+
         // 顯示 Parent 模態框（不需要傳遞回調，_bindChildProjectClickEvents 會直接調用 showChildModal）
         WorkExperienceModal.showParentModal(
           parentExp,
@@ -574,7 +574,7 @@ export class WorkExperienceService {
     } else if (type === 'child') {
       // data 是整個 rowData 物件 { type: 'child', parentId: ..., data: projectObject }
       const projectData = data.data;
-      
+
       if (projectData) {
         WorkExperienceModal.showChildModal(projectData);
       }
@@ -587,17 +587,17 @@ export class WorkExperienceService {
    */
   static async handleLanguageChange(language) {
     LoadingAndErrorComponent.showLoading(true);
-    
+
     try {
       // 1. 更新 LanguageManager（自動更新 URL 和 localStorage）
       LanguageManager.setLanguage(language);
-      
+
       // 2. 更新 i18n Service
       i18nService.setCurrentLanguage(language);
-      
+
       // 3. 刷新應用資料
       const appState = await this.refreshAppData(language);
-      
+
       // 4. 重新渲染表格
       if (appState.sortedRows.length > 0) {
         WorkExperienceTable.initialize({
@@ -607,10 +607,10 @@ export class WorkExperienceService {
           onRowClick: this.handleTableRowClick.bind(this)
         });
       }
-      
+
       // 5. 更新導覽欄菜單（Navigation 會自動載入正確的翻譯）
       Navigation.updateMenuByLanguage(language);
-      
+
       LoadingAndErrorComponent.hideLoading();
     } catch (error) {
       LoadingAndErrorComponent.hideLoading();
@@ -650,7 +650,7 @@ export class WorkExperienceService {
       // 打開 Child 對話框
       const parentId = this.extractParentIdFromChildId(id);
       const parentExp = appState.parentExperiences[parentId];
-      
+
       if (parentExp && parentExp.projects) {
         const childProject = parentExp.projects.find(p => p.id === id);
         if (childProject) {
