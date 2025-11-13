@@ -5,130 +5,65 @@ applyTo: 'services\*Service.js'
 # Service 設計規則
 
 ## 職責
-Service 是**業務邏輯層**，處理複雜的業務流程、資料轉換、狀態管理和跨層協調。
+Service 處理業務邏輯、資料轉換、狀態管理和層級協調。全為靜態方法，無實例化。
 
 ## 核心規則
 
-### 1. 類別結構
-- **命名**: `*Service` (如 `WorkExperienceService`, `LoginService`)
-- **方法**: 全為靜態方法（無實例化）
-- **私有屬性**: 使用 `#` 語法 (如 `static #translationCache = {}`)
-- **日誌**: 使用 Emoji 標記 (✅ 成功, ❌ 錯誤, 🔐 認證, 🌐 語言, 📦 快取)
+### 1. 基本結構
+- **命名**: `*Service` (如 `WorkExperienceService`)
+- **私有屬性**: `static #appState`, `static #cache` (使用 `#` 語法)
+- **日誌**: 使用 Emoji (✅ 成功, ❌ 錯誤, 🔐 認證, 🌐 語言)
 
-### 2. 服務分類
+### 2. 服務類型
 
-#### A. 資料處理服務 (DecryptionService)
-- 純業務邏輯、無狀態
-- 統一回傳: `{ success: boolean, data: any, message: string }`
+| 類型 | 例子 | 職責 |
+|------|------|------|
+| **資料處理** | DecryptionService | 純邏輯、無狀態、返回 `{success, data, message}` |
+| **狀態管理** | WorkExperienceService | 管理 `#appState`，協調 Repository/Component |
+| **認證** | LoginService | 防重入、整合 Middleware |
+| **快取** | i18nService | 快取鍵格式: `${module}_${language}` |
 
-```javascript
-static async decryptData(password, encryptedData) {
-  try {
-    this._validateDecryptionParams(password, encryptedData);
-    const result = await this._performDecryption(password, encryptedData);
-    return { success: true, data: result, message: '成功' };
-  } catch (error) {
-    return { success: false, data: null, message: error.message };
-  }
-}
-```
+### 3. 方法命名約定
 
-#### B. 狀態管理服務 (WorkExperienceService)
-- 私有狀態: `static #appState = { currentLanguage, sortedRows, translations }`
-- 提供: `initializeApp()`, `getAppState()`, `refreshAppData()`
-- 協調 Repository/Component
-
-```javascript
-static getAppState() {
-  return { ...this.#appState }; // 返回副本
-}
-```
-
-#### C. 認證服務 (LoginService)
-- 防重入: `static #isAuthenticating = false`
-- 整合 Middleware
-
-```javascript
-static async login(password, encryptedData) {
-  if (this.#isAuthenticating) return { success: false, message: '認證進行中' };
-  this.#isAuthenticating = true;
-  try {
-    return await AuthMiddleware.authenticate(password, encryptedData, DecryptionService.decryptData);
-  } finally {
-    this.#isAuthenticating = false;
-  }
-}
-```
-
-#### D. 快取服務 (i18nService)
-- 快取物件: `static #translationCache = {}`
-- 快取鍵: `${moduleName}_${language}`
-
-```javascript
-static async loadModuleTranslations(moduleName, language) {
-  const cacheKey = `${moduleName}_${language}`;
-  if (this.#translationCache[cacheKey]) return this.#translationCache[cacheKey];
-  const data = await fetch(`./i18n/translations/${moduleName}.json`);
-  const translations = await data.json();
-  this.#translationCache[cacheKey] = translations[language];
-  return this.#translationCache[cacheKey];
-}
-```
-
-### 3. 私有方法命名
-- **驗證**: `_validate*` (如 `_validateDecryptionParams`)
-- **轉換**: `_*To*` (如 `_base64ToUint8Array`)
-- **處理**: `_process*`, `_handle*`
-- **排序**: `_sortBy*` (如 `_sortByPeriodStart`)
+| 前綴 | 用途 | 例子 |
+|------|------|------|
+| `static` | 初始化 | `initializeApp()`, `initialize()` |
+| `get*` | 取得資料 | `getAppState()`, `getProfile()` |
+| `handle*` | 事件處理 | `handleLogin()`, `handleLanguageChange()` |
+| `_validate*` | 驗證 | `_validateParams()`, `isValidId()` |
+| `_sort*` | 排序 | `_sortByPeriodStart()` |
+| `_*To*` | 轉換 | `_base64ToUint8Array()` |
 
 ### 4. 初始化模式
 
 ```javascript
-// 單次初始化
+// 單次初始化（防止重複）
 static #initialized = false;
 static initialize(config) {
   if (this.#initialized) return;
-  // 初始化邏輯
   this.#initialized = true;
 }
 
 // 可重複初始化（狀態刷新）
 static async initializeApp(language) {
-  this.clearCache();
-  const data = await this._loadData(language);
-  this.#appState = this._buildState(data);
+  const data = await Repository.loadData(language);
+  this.#appState = { language, data };
   return this.#appState;
 }
 ```
 
-### 5. 事件處理方法
+### 5. 統一回傳格式
+- **資料處理**: `{ success: boolean, data: any, message: string }`
+- **狀態查詢**: 返回狀態副本 `{ ...this.#appState }`
+- **驗證**: 返回布林值 `true/false`
 
-**命名**: `handle*`
-
-```javascript
-static async handleLanguageChange(language) {
-  this.#appState.currentLanguage = language;
-  this.clearTranslationCache(language);
-  await this.refreshAppData(language);
-  Component.update(this.#appState);
-}
-```
-
-### 6. 資料驗證
+### 6. 狀態管理
 
 ```javascript
-// 參數驗證（拋出錯誤）
-static _validateParams(param1, param2) {
-  if (!param1) throw new Error('參數 1 不能為空');
-  const requiredFields = ['field1', 'field2'];
-  for (const field of requiredFields) {
-    if (!(field in param2)) throw new Error(`缺少必要欄位: ${field}`);
-  }
-}
+static #appState = { currentLanguage: 'zh-TW', data: null };
 
-// 業務驗證（返回布林值）
-static isValidId(id) {
-  return /^C\d{3}$/.test(id);
+static getAppState() {
+  return { ...this.#appState }; // 返回副本，避免外部修改
 }
 ```
 
@@ -136,110 +71,93 @@ static isValidId(id) {
 
 ```javascript
 try {
-  const result = await this._performOperation();
-  return { success: true, data: result, message: '成功' };
+  const result = await operation();
+  return { success: true, data: result };
 } catch (error) {
-  // 判斷錯誤類型提供友善訊息
-  if (error.message.includes('密碼')) {
-    return { success: false, data: null, message: '密碼錯誤' };
-  }
-  return { success: false, data: null, message: error.message };
+  console.error('❌ 操作:', error);
+  return { success: false, message: error.message };
 }
 ```
 
-### 8. 整合其他層級
-
-```javascript
-// Service → Repository
-static async loadData(language) {
-  const rawData = await Repository.loadData(language);
-  return this._processData(rawData);
-}
-
-// Service → Middleware
-static async authenticate(password, data) {
-  return await AuthMiddleware.authenticate(password, data, DecryptionService.decryptData.bind(DecryptionService));
-}
-
-// Service → Component
-static initializeUI(data) {
-  Navigation.initialize({ onLanguageChange: this.handleLanguageChange });
-  Table.initialize({ data, onRowClick: this.handleRowClick });
-}
-```
-
-### 9. 快取管理
-
-**快取鍵格式**: `${moduleName}_${language}` 或 `${type}_${id}`
+### 8. 快取管理
 
 ```javascript
 static #cache = {};
 
-static async getData(key, loaderFn) {
+static async loadWithCache(key, loaderFn) {
   if (this.#cache[key]) return this.#cache[key];
   const data = await loaderFn();
   this.#cache[key] = data;
   return data;
 }
 
-static getCacheStats() {
-  return {
-    count: Object.keys(this.#cache).length,
-    size: `${(JSON.stringify(this.#cache).length / 1024).toFixed(2)} KB`
-  };
+static clearCache(key = null) {
+  if (key) delete this.#cache[key];
+  else this.#cache = {};
 }
 ```
 
-### 10. 棄用方法
+### 9. 代碼組織結構 (Code Organization with #region)
+
+所有 Service 必須按順序使用 `//#region` 組織：
+
+#### 強制順序
+1. **變數宣告** - 靜態私有字段 (`#translationCache`, `#appState`, `#encryptedData`)
+2. **初始化與建構式** - `initializeApp()`, `initialize()`
+3. **使用方法** - `getAppState()`, `get*()`, `is*()`, `prepare*()` 等公開方法
+4. **UI 相關方法** - `_initializeUI()`, `_renderPage()`, 翻譯加載與清除
+5. **事件處理方法** - `handleLogin()`, `handleLanguageChange()`, `handleLogout()`, `autoOpen*()`
+6. **共用方法** - 共享的私有方法 (`_decrypt*()`, `_updateAppState()`, `tryRestoreSession()`)
+7. **私有方法** - 輔助方法 (`_sortBy*()`, `_parse*()`, `_get*()`, `_validate*()`)
+
+#### 快速參考
 
 ```javascript
-/**
- * @deprecated 改用 newMethod()
- */
-static oldMethod() {
-  console.log('⚠️ oldMethod() 已棄用');
-  return this.newMethod();
+export class WorkExperienceService {
+  //#region 變數宣告
+  static #translationCache = {};
+  static #appState = { currentLanguage: 'zh-TW', sortedRows: [] };
+  static #encryptedData = null;
+  //#endregion
+
+  //#region 初始化與建構式
+  static async initializeApp(language = 'zh-TW') { /* ... */ }
+  //#endregion
+
+  //#region 使用方法
+  static getAppState() { return { ...this.#appState }; }
+  static isParentId(id) { return /^C\d{3}$/.test(id); }
+  //#endregion
+
+  //#region UI 相關方法
+  static async _initializeUI(parentExps) { /* ... */ }
+  static async getWorkExperienceUIText(language) { /* ... */ }
+  //#endregion
+
+  //#region 事件處理方法
+  static async handleLogin(password) { /* ... */ }
+  static async handleLanguageChange(language) { /* ... */ }
+  //#endregion
+
+  //#region 共用方法
+  static async _decryptSingleData(decryptFn, password = null) { /* ... */ }
+  static _updateAppStateWithDecryptedData(parentExps) { /* ... */ }
+  //#endregion
+
+  //#region 私有方法
+  static _sortByPeriodStart(experiences) { /* ... */ }
+  static _parsePeriodDate(dateStr) { /* ... */ }
+  //#endregion
 }
 ```
 
-## Service 模板範例
+#### 重要提示
+- ✅ 必須按順序使用 region（順序固定）
+- ✅ 私有方法（`_` 前綴）一律放在「私有方法」region
+- ✅ 事件處理（`handle` 或 `autoOpen`）一律放在「事件處理方法」region
+- ❌ 不要打亂 region 順序或跨 region 放置方法
 
-```javascript
-export class ExampleService {
-  static #appState = { currentLanguage: 'zh-TW', data: [] };
-  static #cache = {};
-  
-  // 初始化流程
-  static async initializeApp(language) {
-    try {
-      const data = await Repository.loadData(language);
-      if (data.encrypted) await this._handleAuthentication(data);
-      const processed = this._processData(data);
-      this.#appState = { language, data: processed };
-      this._initializeComponents();
-      return this.#appState;
-    } catch (error) {
-      console.error('❌ 初始化失敗:', error);
-      throw error;
-    }
-  }
-  
-  // 語言切換流程
-  static async handleLanguageChange(language) {
-    i18nService.clearCache();
-    const [data, translations] = await Promise.all([
-      Repository.loadData(language),
-      i18nService.loadModuleTranslations('module', language)
-    ]);
-    this.#appState.currentLanguage = language;
-    this.#appState.translations = translations;
-    Component.update(translations);
-  }
-  
-  // 取得狀態
-  static getAppState() {
-    return { ...this.#appState };
-  }
-}
-```
+## 實際範例
+
+參考 WorkExperienceService.js 和 ResumeService.js 的實現模式。
 
