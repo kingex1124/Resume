@@ -13,28 +13,14 @@
 
 <body>
   <!-- 登入畫面 -->
-  <div id="loginScreen"></div>
+  <div id="loginScreen" class="hidden"></div>
 
   <!-- 導覽欄 -->
   <nav id="navigation"></nav>
 
   <!-- 主內容區域 -->
   <main>
-    <div class="header">
-      <div>
-        <h1>🎉 歡迎回來</h1>
-        <p>個人簡介內容準備中...</p>
-      </div>
-    </div>
-    <div id="contentArea">
-      <div class="card full-width">
-        <h2>📝 個人簡介</h2>
-        <div class="card-content">
-          <p>個人簡介內容將在此顯示</p>
-          <p>資料準備中...</p>
-        </div>
-      </div>
-    </div>
+    <div id="contentArea"></div>
   </main>
 
   <!-- 頁腳 -->
@@ -59,7 +45,6 @@
         // 1️⃣ 初始化語言管理器（自動從 URL 或 localStorage 讀取）
         const language = LanguageManager.initialize();
         console.log(`📍 檢測到語言: ${language}`);
-
 
         // 2️⃣ 初始化首頁應用（包含登入處理）
         await IndexService.initializeApp(language);

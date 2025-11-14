@@ -1,0 +1,26 @@
+{
+  "zh-TW": {
+    "index": {
+      "pageTitle": "個人簡介",
+      "introductionLabel": "個人簡介",
+      "personalityLabel": "人格特質",
+      "tagsLabel": "特質標籤"
+    }
+  },
+  "ja": {
+    "index": {
+      "pageTitle": "自己紹介",
+      "introductionLabel": "自己紹介",
+      "personalityLabel": "性格特性",
+      "tagsLabel": "特性タグ"
+    }
+  },
+  "en": {
+    "index": {
+      "pageTitle": "About Me",
+      "introductionLabel": "Introduction",
+      "personalityLabel": "Personality Traits",
+      "tagsLabel": "Trait Tags"
+    }
+  }
+}

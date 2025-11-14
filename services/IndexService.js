@@ -1,9 +1,9 @@
 /**
  * Index Service Layer
- * 處理首頁的業務邏輯：登入、語言管理、UI 初始化等
+ * 處理首頁的業務邏輯：登入、語言管理、資料載入、UI 初始化等
  * 
- * 完全參考 WorkExperienceService 的架構模式
- * 支援加密資料驗證和 Cookie 還原
+ * 架構參考 WorkExperienceService，遵循 ServiceRule 設計規則
+ * 支援加密和非加密資料格式
  */
 
 import { i18nService } from './i18nService.js';
@@ -11,21 +11,21 @@ import { LoginService } from './LoginService.js';
 import { LanguageManager } from '../i18n/LanguageManager.js';
 import { Navigation } from '../components/Navigation.js';
 import { LoginComponent } from '../components/LoginComponent.js';
+import { IndexComponent } from '../components/IndexComponent.js';
+import { IndexRepository } from '../repositories/IndexRepository.js';
 
 export class IndexService {
-  // 快取翻譯資料（按 "index_{language}" 鍵值儲存）
+  //#region 變數宣告
   static #translationCache = {};
-
-  // 應用狀態
   static #appState = {
     currentLanguage: 'zh-TW',
-    contentData: null,          // 未來會存放個人簡介、性格等資料
+    indexData: null,
     translations: null
   };
-
-  // 加密資料快取（從 Repository 加載，用於登入檢查）
   static #encryptedData = null;
+  //#endregion
 
+  //#region 初始化與建構式
   /**
    * 初始化應用狀態（從語言檢測開始）
    * 
@@ -33,24 +33,23 @@ export class IndexService {
    * 1. 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
    * 2. 載入首頁資料（可能是加密或明文）
    * 3. 初始化登入元件
-   * 4. 優先檢查 Cookie 還原會話 (如失敗 → 顯示登入)
-   * 5. 初始化 UI
+   * 4. 若資料已加密，檢查 Cookie 會話還原或顯示登入
+   * 5. 若資料未加密，直接初始化 UI
    * 
    * @param {string} language - 語言代碼
    * @returns {Promise<Object>} 應用狀態
    */
   static async initializeApp(language) {
     try {
-      // 1️⃣ 初始化語言管理器（優先順序：URL > localStorage > 參數 > 預設）
+      // 1️⃣ 初始化語言管理器
       const detectedLanguage = LanguageManager.initialize();
       const finalLanguage = detectedLanguage || language || 'zh-TW';
       
       i18nService.initialize(finalLanguage);
       this.#appState.currentLanguage = finalLanguage;
 
-      // 2️⃣ 載入首頁資料（通過動態 import）
-      const indexData = await this._loadIndexData(finalLanguage);
-      this.#encryptedData = indexData;
+      // 2️⃣ 載入首頁資料
+      this.#encryptedData = await IndexRepository.loadIndexData(finalLanguage);
       
       // 3️⃣ 初始化登入元件
       LoginComponent.initialize({
@@ -59,59 +58,74 @@ export class IndexService {
         onCancel: () => {}
       });
 
-      LoginComponent.hide();
+      // 4️⃣ 檢查是否有加密資料需要解密
+      const hasEncryptedData = this.#encryptedData.encrypted === true;
 
-      // 4️⃣ 只有加密資料才需要檢查 Cookie
-      if (indexData.encrypted === true) {
-        // 優先嘗試從 Cookie 還原會話
+      if (hasEncryptedData) {
+        // 優先從 Cookie 還原會話
         const decryptResult = await this.tryRestoreSession();
 
         if (decryptResult.success) {
-          this.#appState.contentData = decryptResult.data;
-          return await this._initializeUI();
+          // Cookie 有效，直接使用解密後的資料
+          this.#appState.indexData = decryptResult.data;
+          await this._initializeUI();
+          return this.#appState;
         } else {
-          // 沒有有效的 Cookie，顯示登入介面
+          // 沒有有效的 Cookie，顯示登入畫面
           LoginComponent.show();
           return this.#appState;
         }
       } else {
         // 非加密資料，直接使用
-        this.#appState.contentData = indexData;
-        return await this._initializeUI();
+        this.#appState.indexData = this.#encryptedData;
+        await this._initializeUI();
+        return this.#appState;
       }
     } catch (error) {
       console.error('❌ 應用初始化失敗:', error.message);
       throw error;
     }
   }
+  //#endregion
 
+  //#region 使用方法
   /**
-   * 載入首頁資料
-   * 通過動態 import 加載資料檔案
-   * 
-   * @private
+   * 取得應用狀態
+   * @returns {Object} 當前應用狀態副本
    */
-  static async _loadIndexData(language) {
-    try {
-      // 動態導入資料檔案
-      const filename = `resume-profile-${language}.json`;
-      const response = await fetch(`./data/${filename}`);
-      
-      if (!response.ok) {
-        throw new Error(`無法載入 ${filename}: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('❌ 載入首頁資料失敗:', error);
-      throw error;
-    }
+  static getAppState() {
+    return { ...this.#appState };
   }
 
   /**
+   * 取得當前語言
+   * @returns {string} 語言代碼
+   */
+  static getCurrentLanguage() {
+    return this.#appState.currentLanguage;
+  }
+
+  /**
+   * 取得翻譯資料
+   * @returns {Object} 翻譯物件
+   */
+  static getTranslations() {
+    return this.#appState.translations || {};
+  }
+
+  /**
+   * 取得首頁內容資料
+   * @returns {Object} 首頁資料
+   */
+  static getIndexData() {
+    return this.#appState.indexData;
+  }
+  //#endregion
+
+  //#region UI 相關方法
+  /**
    * 初始化 UI
-   * 隱藏登入畫面、初始化導覽、載入翻譯等
+   * 隱藏登入畫面、初始化導覽、初始化首頁元件等
    * 
    * @private
    * @returns {Promise<Object>} 應用狀態
@@ -127,7 +141,7 @@ export class IndexService {
       }
 
       // 2️⃣ 載入翻譯
-      const translations = await this.getIndexUITranslations(this.#appState.currentLanguage);
+      const translations = await this._loadIndexTranslations(this.#appState.currentLanguage);
       this.#appState.translations = translations;
 
       // 3️⃣ 初始化導覽欄
@@ -138,7 +152,14 @@ export class IndexService {
         onLogout: () => this.handleLogout()
       });
 
-      // 4️⃣ 顯示主要內容和導覽欄
+      // 4️⃣ 初始化首頁元件
+      await IndexComponent.initialize({
+        containerId: 'contentArea',
+        data: this.#appState.indexData,
+        translations: translations
+      });
+
+      // 5️⃣ 顯示主要內容和導覽欄
       const mainContent = document.querySelector('main');
       if (mainContent) {
         mainContent.style.display = 'block';
@@ -150,6 +171,7 @@ export class IndexService {
         navBar.style.display = 'block';
       }
 
+      console.log('✅ UI 初始化完成');
       return this.#appState;
     } catch (error) {
       console.error('❌ UI 初始化失敗:', error);
@@ -157,6 +179,53 @@ export class IndexService {
     }
   }
 
+  /**
+   * 加載首頁翻譯資料
+   * 
+   * @private
+   * @param {string} language - 語言代碼
+   * @returns {Promise<Object>} 首頁翻譯物件
+   */
+  static async _loadIndexTranslations(language) {
+    try {
+      const cacheKey = `index_${language}`;
+
+      // 檢查本地快取
+      if (this.#translationCache[cacheKey]) {
+        return this.#translationCache[cacheKey];
+      }
+
+      // 從 i18nService 加載翻譯
+      const translations = await i18nService.loadModuleTranslations('index', language);
+
+      // 快取翻譯資料
+      this.#translationCache[cacheKey] = translations;
+
+      return translations;
+    } catch (error) {
+      console.error('❌ 加載翻譯失敗:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 清除首頁翻譯快取
+   * 
+   * @param {string} language - 特定語言，如果為空則清除全部
+   */
+  static clearTranslationCache(language = null) {
+    if (language) {
+      const cacheKey = `index_${language}`;
+      if (this.#translationCache[cacheKey]) {
+        delete this.#translationCache[cacheKey];
+      }
+    } else {
+      this.#translationCache = {};
+    }
+  }
+  //#endregion
+
+  //#region 事件處理方法
   /**
    * 登入事件處理
    * 使用密碼解密資料
@@ -175,7 +244,7 @@ export class IndexService {
 
       if (result.success) {
         // 更新應用狀態
-        this.#appState.contentData = result.data;
+        this.#appState.indexData = result.data;
         
         // 初始化 UI
         await this._initializeUI();
@@ -189,6 +258,117 @@ export class IndexService {
     }
   }
 
+  /**
+   * 語言切換事件處理
+   * 
+   * 流程：
+   * 1. 載入新語言的資料檔案
+   * 2. 如果是加密資料，從 Cookie 重新解密
+   * 3. 如果解密失敗，顯示登入畫面
+   * 4. 更新翻譯和 UI
+   * 
+   * @param {string} language - 新語言代碼
+   */
+  static async handleLanguageChange(language) {
+    try {
+      // 1️⃣ 更新語言管理器和 i18n 服務
+      LanguageManager.setLanguage(language);
+      i18nService.setCurrentLanguage(language);
+      this.#appState.currentLanguage = language;
+
+      // 2️⃣ 載入新語言的資料
+      this.#encryptedData = await IndexRepository.loadIndexData(language);
+      
+      // 3️⃣ 檢查是否有加密資料需要重新解密
+      const hasEncryptedData = this.#encryptedData.encrypted === true;
+
+      if (hasEncryptedData) {
+        // 嘗試從 Cookie 還原會話並用新語言的加密資料重新解密
+        const decryptResult = await this.tryRestoreSession();
+
+        if (decryptResult.success) {
+          // 解密成功，更新資料
+          this.#appState.indexData = decryptResult.data;
+        } else {
+          // 解密失敗，需要重新登入
+          this.clearTranslationCache();
+          i18nService.initialize(language);
+          
+          LoginComponent.initialize({
+            containerId: 'loginScreen',
+            onLogin: (password) => this.handleLogin(password),
+            onCancel: () => {}
+          });
+          LoginComponent.show();
+          return;
+        }
+      } else {
+        // 非加密資料，直接使用
+        this.#appState.indexData = this.#encryptedData;
+      }
+
+      // 4️⃣ 重新載入翻譯
+      this.clearTranslationCache();
+      const translations = await this._loadIndexTranslations(language);
+      this.#appState.translations = translations;
+
+      // 5️⃣ 更新首頁內容
+      await IndexComponent.updateLanguage(language, this.#appState.indexData, translations);
+
+      // 6️⃣ 更新導覽欄菜單
+      Navigation.updateMenuByLanguage(language);
+
+      console.log(`🌐 語言已切換至: ${language}`);
+    } catch (error) {
+      console.error('❌ 語言切換失敗:', error);
+    }
+  }
+
+  /**
+   * 登出事件處理
+   */
+  static async handleLogout() {
+    try {
+      // 清除會話和 Cookie
+      LoginService.logout();
+
+      // 重置資料
+      this.#appState.indexData = null;
+
+      // 隱藏主要內容
+      const mainContent = document.querySelector('main');
+      if (mainContent) {
+        mainContent.style.display = 'none';
+        mainContent.classList.add('hidden');
+      }
+
+      const navBar = document.getElementById('navigation');
+      if (navBar) {
+        navBar.style.display = 'none';
+      }
+
+      // 清除 DOM 元素
+      const table = document.getElementById('contentArea');
+      if (table) {
+        table.innerHTML = '';
+      }
+
+      // 初始化登入元件
+      LoginComponent.initialize({
+        containerId: 'loginScreen',
+        onLogin: (password) => this.handleLogin(password),
+        onCancel: () => { }
+      });
+      LoginComponent.show();
+
+      console.log('✅ 已登出');
+    } catch (error) {
+      console.error('❌ 登出失敗:', error);
+    }
+  }
+  //#endregion
+
+  //#region 共用方法
   /**
    * 嘗試從 Cookie 還原會話
    * 檢查是否存在有效的認證 Cookie，如果有則自動解密
@@ -227,180 +407,5 @@ export class IndexService {
       };
     }
   }
-
-  /**
-   * 語言切換事件處理
-   * 
-   * 流程：
-   * 1. 更新語言管理器（自動更新 URL 和 localStorage）
-   * 2. 更新 i18n 服務
-   * 3. 清除舊語言的翻譯快取
-   * 4. 檢查加密資料並重新解密（如果需要）
-   * 5. 重新初始化 UI
-   * 
-   * @param {string} language - 新語言代碼
-   */
-  static async handleLanguageChange(language) {
-    try {
-      // 1. 更新語言管理器（自動更新 URL 和 localStorage）
-      LanguageManager.setLanguage(language);
-
-      // 2. 更新 i18n 服務
-      i18nService.setCurrentLanguage(language);
-
-      // 3. 更新應用狀態
-      this.#appState.currentLanguage = language;
-
-      // 4. 清除舊語言快取並重新載入翻譯
-      this.clearTranslationCache(language);
-      const translations = await this.getIndexUITranslations(language);
-      this.#appState.translations = translations;
-
-      // 5. 更新導覽欄菜單（Navigation 會自動載入正確的翻譯）
-      Navigation.updateMenuByLanguage(language);
-    } catch (error) {
-      console.error('❌ 語言切換失敗:', error);
-    }
-  }
-
-  /**
-   * 登出事件處理
-   * 清除會話並回到登入狀態
-   */
-  static async handleLogout() {
-    try {
-      // 清除會話和 Cookie
-      LoginService.logout();
-
-      // 重置內容資料
-      this.#appState.contentData = null;
-
-      // 隱藏主要內容
-      const mainContent = document.querySelector('main');
-      if (mainContent) {
-        mainContent.style.display = 'none';
-        mainContent.classList.add('hidden');
-      }
-
-      const navBar = document.getElementById('navigation');
-      if (navBar) {
-        navBar.style.display = 'none';
-      }
-
-      // 顯示登入畫面
-      if (this.#encryptedData && this.#encryptedData.encrypted === true) {
-        LoginComponent.show();
-      }
-    } catch (error) {
-      console.error('❌ 登出失敗:', error);
-    }
-  }
-
-  // ============================================
-  // 翻譯相關方法
-  // ============================================
-
-  /**
-   * 加載首頁模組的翻譯資料
-   * 
-   * @param {string} language - 語言代碼
-   * @returns {Promise<Object>} 首頁翻譯物件
-   */
-  static async loadIndexTranslations(language) {
-    try {
-      const cacheKey = `index_${language}`;
-
-      // 檢查本地快取
-      if (this.#translationCache[cacheKey]) {
-        return this.#translationCache[cacheKey];
-      }
-
-      // 從 i18nService 加載翻譯
-      const translations = await i18nService.loadModuleTranslations('common', language);
-
-      // 快取翻譯資料
-      this.#translationCache[cacheKey] = translations;
-
-      return translations;
-    } catch (error) {
-      console.error('❌ 加載首頁翻譯失敗:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * 取得首頁 UI 文本（共用翻譯）
-   * 
-   * @param {string} language - 語言代碼
-   * @returns {Promise<Object>} 包含所有 UI 文本的翻譯物件
-   */
-  static async getIndexUITranslations(language) {
-    const translations = await this.loadIndexTranslations(language);
-
-    return {
-      common: translations?.common || {},
-      navigation: translations?.navigation || {}
-    };
-  }
-
-  /**
-   * 清除首頁翻譯快取
-   * 
-   * @param {string} language - 特定語言，如果為空則清除全部
-   */
-  static clearTranslationCache(language = null) {
-    if (language) {
-      const cacheKey = `index_${language}`;
-      if (this.#translationCache[cacheKey]) {
-        delete this.#translationCache[cacheKey];
-      }
-    } else {
-      this.#translationCache = {};
-    }
-  }
-
-  // ============================================
-  // 取得應用狀態相關方法
-  // ============================================
-
-  /**
-   * 取得應用狀態
-   * @returns {Object} 當前應用狀態
-   */
-  static getAppState() {
-    return { ...this.#appState };
-  }
-
-  /**
-   * 取得當前語言
-   * @returns {string} 語言代碼
-   */
-  static getCurrentLanguage() {
-    return this.#appState.currentLanguage;
-  }
-
-  /**
-   * 取得翻譯資料
-   * @returns {Object} 翻譯物件
-   */
-  static getTranslations() {
-    return this.#appState.translations || {};
-  }
-
-  /**
-   * 取得內容資料（未來用於個人簡介、性格等）
-   * @returns {Object} 內容資料
-   */
-  static getContentData() {
-    return this.#appState.contentData;
-  }
-
-  /**
-   * 設定內容資料（未來用於個人簡介、性格等）
-   * @param {Object} data - 內容資料
-   */
-  static setContentData(data) {
-    this.#appState.contentData = data;
-    console.log('📦 內容資料已更新');
-  }
+  //#endregion
 }
