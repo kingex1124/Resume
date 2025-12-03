@@ -13,6 +13,7 @@ import { Navigation } from '../components/Navigation.js';
 import { LoginComponent } from '../components/LoginComponent.js';
 import { IndexComponent } from '../components/IndexComponent.js';
 import { SkillsStatsComponent } from '../components/SkillsStatsComponent.js';
+import { SettingsLoader } from '../components/SettingsLoader.js';
 import { IndexRepository } from '../repositories/IndexRepository.js';
 import { WorkExperienceRepository } from '../repositories/WorkExperienceRepository.js';
 
@@ -46,6 +47,9 @@ export class IndexService {
    */
   static async initializeApp(language) {
     try {
+      // 0️⃣ 載入設定檔
+      await SettingsLoader.load();
+
       // 1️⃣ 初始化語言管理器
       const detectedLanguage = LanguageManager.initialize();
       const finalLanguage = detectedLanguage || language || 'zh-TW';
@@ -203,6 +207,12 @@ export class IndexService {
    */
   static async _loadAndDisplaySkillsStats() {
     try {
+      // 檢查設定檔是否啟用技能統計顯示
+      if (!SettingsLoader.get('features.showSkillsStats', true)) {
+        console.log('📊 技能統計已在設定中停用');
+        return;
+      }
+
       // 載入工作經歷資料
       const workExpData = await WorkExperienceRepository.loadWorkExperienceData(this.#appState.currentLanguage);
       
