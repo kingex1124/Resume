@@ -140,4 +140,65 @@ export class WorkExperienceRepository {
       encrypted: data.encrypted || false
     };
   }
+
+  /**
+   * 取得所有專案的技術標籤統計
+   * 統計所有 isDisplayed=true 的 parent 中的 projects.tags
+   * @param {Object} data - 工作經歷資料物件
+   * @returns {Object} { totalProjects: number, skills: [{ name: string, count: number, percentage: number }] }
+   */
+  static getAllProjectTagsStats(data) {
+    if (!data || !data.workExperiences) {
+      return { totalProjects: 0, skills: [] };
+    }
+
+    const tagCounts = {};
+    let totalProjects = 0;
+
+    // 遍歷所有 parent 工作經歷
+    data.workExperiences
+      .filter(exp => exp.type === 'parent' && exp.isDisplayed !== false)
+      .forEach(exp => {
+        // 遍歷每個 parent 中的 projects
+        if (Array.isArray(exp.projects)) {
+          exp.projects
+            .filter(project => project.isDisplayed !== false)
+            .forEach(project => {
+              totalProjects++;
+              
+              // 統計 tags
+              if (Array.isArray(project.tags)) {
+                project.tags.forEach(tag => {
+                  const tagName = typeof tag === 'string' ? tag : tag.name || tag.label || '';
+                  if (tagName) {
+                    tagCounts[tagName] = (tagCounts[tagName] || 0) + 1;
+                  }
+                });
+              }
+            });
+        }
+      });
+
+    // 轉換為陣列並計算百分比
+    const skills = Object.entries(tagCounts).map(([name, count]) => ({
+      name,
+      count,
+      percentage: totalProjects > 0 ? (count / totalProjects) * 100 : 0
+    }));
+
+    // 按使用次數排序（高到低）
+    skills.sort((a, b) => b.count - a.count);
+
+    return { totalProjects, skills };
+  }
+
+  /**
+   * 取得所有不重複的技術標籤列表
+   * @param {Object} data - 工作經歷資料物件
+   * @returns {Array<string>} 不重複的標籤列表
+   */
+  static getAllUniqueTags(data) {
+    const stats = this.getAllProjectTagsStats(data);
+    return stats.skills.map(skill => skill.name);
+  }
 }

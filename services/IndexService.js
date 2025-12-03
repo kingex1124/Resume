@@ -12,7 +12,9 @@ import { LanguageManager } from '../i18n/LanguageManager.js';
 import { Navigation } from '../components/Navigation.js';
 import { LoginComponent } from '../components/LoginComponent.js';
 import { IndexComponent } from '../components/IndexComponent.js';
+import { SkillsStatsComponent } from '../components/SkillsStatsComponent.js';
 import { IndexRepository } from '../repositories/IndexRepository.js';
+import { WorkExperienceRepository } from '../repositories/WorkExperienceRepository.js';
 
 export class IndexService {
   //#region 變數宣告
@@ -20,9 +22,12 @@ export class IndexService {
   static #appState = {
     currentLanguage: 'zh-TW',
     indexData: null,
+    workExperienceData: null,
+    skillsStats: null,
     translations: null
   };
   static #encryptedData = null;
+  static #encryptedWorkExperienceData = null;
   //#endregion
 
   //#region 初始化與建構式
@@ -120,6 +125,14 @@ export class IndexService {
   static getIndexData() {
     return this.#appState.indexData;
   }
+
+  /**
+   * 取得技能統計資料
+   * @returns {Object} 技能統計資料
+   */
+  static getSkillsStats() {
+    return this.#appState.skillsStats;
+  }
   //#endregion
 
   //#region UI 相關方法
@@ -159,7 +172,10 @@ export class IndexService {
         translations: translations
       });
 
-      // 5️⃣ 顯示主要內容和導覽欄
+      // 5️⃣ 載入工作經歷資料並計算技能統計
+      await this._loadAndDisplaySkillsStats();
+
+      // 6️⃣ 顯示主要內容和導覽欄
       const mainContent = document.querySelector('main');
       if (mainContent) {
         mainContent.style.display = 'block';
@@ -176,6 +192,77 @@ export class IndexService {
     } catch (error) {
       console.error('❌ UI 初始化失敗:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 載入工作經歷資料並顯示技能統計
+   * 
+   * @private
+   * @returns {Promise<void>}
+   */
+  static async _loadAndDisplaySkillsStats() {
+    try {
+      // 載入工作經歷資料
+      const workExpData = await WorkExperienceRepository.loadWorkExperienceData(this.#appState.currentLanguage);
+      
+      // 檢查是否加密
+      if (workExpData.encrypted === true) {
+        this.#encryptedWorkExperienceData = workExpData;
+        
+        // 嘗試從 Cookie 還原會話解密
+        const decryptResult = await this._tryDecryptWorkExperienceData();
+        
+        if (decryptResult.success) {
+          this.#appState.workExperienceData = decryptResult.data;
+        } else {
+          console.log('📊 工作經歷資料需要登入後才能顯示技能統計');
+          return;
+        }
+      } else {
+        this.#appState.workExperienceData = workExpData;
+      }
+
+      // 計算技能統計
+      const skillsStats = WorkExperienceRepository.getAllProjectTagsStats(this.#appState.workExperienceData);
+      this.#appState.skillsStats = skillsStats;
+
+      // 初始化技能統計元件
+      if (skillsStats && skillsStats.skills && skillsStats.skills.length > 0) {
+        await SkillsStatsComponent.initialize({
+          containerId: 'skills-stats-container',
+          skillsData: skillsStats,
+          translations: this.#appState.translations
+        });
+        console.log('📊 技能統計載入完成');
+      }
+    } catch (error) {
+      console.error('❌ 載入技能統計失敗:', error.message);
+      // 不阻擋主頁面載入
+    }
+  }
+
+  /**
+   * 嘗試解密工作經歷資料
+   * 
+   * @private
+   * @returns {Promise<Object>} { success: boolean, data?: Object }
+   */
+  static async _tryDecryptWorkExperienceData() {
+    try {
+      if (!this.#encryptedWorkExperienceData) {
+        return { success: false, message: '缺少加密資料' };
+      }
+
+      const result = await LoginService.restoreSession(this.#encryptedWorkExperienceData);
+      
+      if (result.success) {
+        return { success: true, data: result.data };
+      }
+      
+      return { success: false, message: '無有效會話' };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
   }
 
@@ -315,7 +402,10 @@ export class IndexService {
       // 5️⃣ 更新首頁內容
       await IndexComponent.updateLanguage(language, this.#appState.indexData, translations);
 
-      // 6️⃣ 更新導覽欄菜單
+      // 6️⃣ 更新技能統計
+      await this._loadAndDisplaySkillsStats();
+
+      // 7️⃣ 更新導覽欄菜單
       Navigation.updateMenuByLanguage(language);
 
       console.log(`🌐 語言已切換至: ${language}`);

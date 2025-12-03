@@ -4,7 +4,10 @@
       "pageTitle": "個人簡介",
       "introductionLabel": "個人簡介",
       "personalityLabel": "人格特質",
-      "tagsLabel": "特質標籤"
+      "tagsLabel": "特質標籤",
+      "skillsStatsLabel": "💻 技術使用統計",
+      "totalProjectsLabel": "專案總數",
+      "usageLabel": "個專案使用"
     }
   },
   "ja": {
@@ -12,7 +15,10 @@
       "pageTitle": "自己紹介",
       "introductionLabel": "自己紹介",
       "personalityLabel": "性格特性",
-      "tagsLabel": "特性タグ"
+      "tagsLabel": "特性タグ",
+      "skillsStatsLabel": "💻 技術利用統計",
+      "totalProjectsLabel": "プロジェクト総数",
+      "usageLabel": "件のプロジェクト"
     }
   },
   "en": {
@@ -20,7 +26,10 @@
       "pageTitle": "About Me",
       "introductionLabel": "Introduction",
       "personalityLabel": "Personality Traits",
-      "tagsLabel": "Trait Tags"
+      "tagsLabel": "Trait Tags",
+      "skillsStatsLabel": "💻 Tech Stack Usage",
+      "totalProjectsLabel": "Total Projects",
+      "usageLabel": "projects"
     }
   }
 }
