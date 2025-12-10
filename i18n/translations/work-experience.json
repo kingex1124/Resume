@@ -15,7 +15,10 @@
         "workingDaysLabel": "工作天數",
         "roleLabel": "職務角色",
         "rolesLabel": "職務/內容",
-        "contentLabel": "內容詳情"
+        "contentLabel": "內容詳情",
+        "tagsLabel": "技術標籤",
+        "parentTagsLabel": "技術標籤",
+        "projectTagsLabel": "技術標籤"
       }
     },
     "common": {
@@ -39,20 +42,23 @@
       "period_format": "{start} ~ {end} ({duration})",
       "modal": {
         "close": "閉じる",
-        "projectsList": "プロジェクトリスト",
+        "projectsList": "プロジェクト一覧",
         "projectDetails": "プロジェクト詳細",
         "periodLabel": "期間",
         "workingDaysLabel": "稼働日数",
         "roleLabel": "職務役割",
         "rolesLabel": "職務/内容",
-        "contentLabel": "内容詳細"
+        "contentLabel": "内容詳細",
+        "tagsLabel": "技術タグ",
+        "parentTagsLabel": "技術タグ",
+        "projectTagsLabel": "技術タグ"
       }
     },
     "common": {
       "loading": "読み込み中...",
       "error": "エラー",
       "errorLoadingData": "データの読み込みに失敗しました",
-      "tryAgain": "もう一度試す",
+      "tryAgain": "再試行",
       "back": "戻る",
       "close": "閉じる",
       "confirm": "確認",
@@ -75,7 +81,10 @@
         "workingDaysLabel": "Working Days",
         "roleLabel": "Job Role",
         "rolesLabel": "Role/Content",
-        "contentLabel": "Content Details"
+        "contentLabel": "Content Details",
+        "tagsLabel": "Technical Tags",
+        "parentTagsLabel": "Technical Tags",
+        "projectTagsLabel": "Technical Tags"
       }
     },
     "common": {

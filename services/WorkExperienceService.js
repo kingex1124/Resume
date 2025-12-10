@@ -351,6 +351,7 @@ export class WorkExperienceService {
   static handleTableRowClick(clickData) {
     const appState = this.getAppState();
     const { type, id, data } = clickData;
+    const modalLabels = this._getModalLabelOptions();
 
     if (type === 'parent') {
       // data 是整個 rowData 物件 { type: 'parent', data: parentExpObject }
@@ -359,14 +360,15 @@ export class WorkExperienceService {
       if (parentExp) {
         const childProjects = this.getParentChildProjects(parentExp);
 
-        // 顯示 Parent 模態框（不需要傳遞回調，_bindChildProjectClickEvents 會直接調用 showChildModal）
+        // 顯示 Parent 模態框，child 點擊時帶入標籤設定
         WorkExperienceModal.showParentModal(
           parentExp,
           childProjects,
-          (projectData) => {
+          (projectData, options) => {
             // Child 專案被點擊時，顯示詳情
-            WorkExperienceModal.showChildModal(projectData);
-          }
+            WorkExperienceModal.showChildModal(projectData, options);
+          },
+          modalLabels
         );
       }
     } else if (type === 'child') {
@@ -374,7 +376,7 @@ export class WorkExperienceService {
       const projectData = data.data;
 
       if (projectData) {
-        WorkExperienceModal.showChildModal(projectData);
+        WorkExperienceModal.showChildModal(projectData, modalLabels);
       }
     }
   }
@@ -495,6 +497,8 @@ export class WorkExperienceService {
       return;
     }
 
+    const modalLabels = this._getModalLabelOptions();
+
     // 判斷是 parent 還是 child ID
     const isParentId = this.isParentId(id);
     const isChildId = this.isChildId(id);
@@ -507,9 +511,10 @@ export class WorkExperienceService {
         WorkExperienceModal.showParentModal(
           parentExp,
           childProjects,
-          (projectData) => {
-            WorkExperienceModal.showChildModal(projectData);
-          }
+          (projectData, options) => {
+            WorkExperienceModal.showChildModal(projectData, options);
+          },
+          modalLabels
         );
       }
     } else if (isChildId) {
@@ -520,7 +525,7 @@ export class WorkExperienceService {
       if (parentExp && parentExp.projects) {
         const childProject = parentExp.projects.find(p => p.id === id);
         if (childProject) {
-          WorkExperienceModal.showChildModal(childProject);
+          WorkExperienceModal.showChildModal(childProject, modalLabels);
         }
       }
     }
@@ -628,6 +633,26 @@ export class WorkExperienceService {
         onRowClick: this.handleTableRowClick.bind(this)
       });
     }
+  }
+
+  /**
+   * 取得模態框標籤文案
+   * @returns {Object} { parentTagsLabel, projectTagsLabel }
+   * @private
+   */
+  static _getModalLabelOptions() {
+    const modalTexts = this.#appState.translations?.modal || {};
+    const sharedTagLabel = modalTexts.tagsLabel || 'Technical Tags';
+
+    return {
+      parentTagsLabel: modalTexts.parentTagsLabel || sharedTagLabel,
+      projectTagsLabel: modalTexts.projectTagsLabel || sharedTagLabel,
+      tagsLabel: sharedTagLabel,
+      periodLabel: modalTexts.periodLabel || 'Period',
+      workingDaysLabel: modalTexts.workingDaysLabel || 'Working Days',
+      roleLabel: modalTexts.roleLabel || 'Job Role',
+      rolesLabel: modalTexts.rolesLabel || modalTexts.roleLabel || 'Role/Content'
+    };
   }
   //#endregion
 

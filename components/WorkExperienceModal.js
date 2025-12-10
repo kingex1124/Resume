@@ -37,23 +37,25 @@ export class WorkExperienceModal {
    * @param {Object} parentData - Parent 工作經歷物件
    * @param {Array} childProjects - 子專案陣列
    * @param {Function} onChildClick - Child 項目點擊回調
+   * @param {Object} options - 額外配置（如標籤文案）
    */
-  static showParentModal(parentData, childProjects = [], onChildClick = null) {
-    const modalContent = this._buildParentModalContent(parentData, childProjects, onChildClick);
-    this._displayModal(modalContent, 'parent', { parentData, childProjects, onChildClick });
+  static showParentModal(parentData, childProjects = [], onChildClick = null, options = {}) {
+    const modalContent = this._buildParentModalContent(parentData, childProjects, options);
+    this._displayModal(modalContent, 'parent', { parentData, childProjects, onChildClick, options });
     
     // 綁定 child 專案點擊事件
-    if (onChildClick) {
-      this._bindChildProjectClickEvents(childProjects, onChildClick);
+    if (childProjects && childProjects.length > 0) {
+      this._bindChildProjectClickEvents(childProjects, onChildClick, options);
     }
   }
 
   /**
    * 顯示 Child 專案詳情對話框
    * @param {Object} projectData - Child 專案物件
+   * @param {Object} options - 額外配置（如標籤文案）
    */
-  static showChildModal(projectData) {
-    const modalContent = this._buildChildModalContent(projectData);
+  static showChildModal(projectData, options = {}) {
+    const modalContent = this._buildChildModalContent(projectData, options);
     this._displayModal(modalContent, 'child');
   }
 
@@ -61,11 +63,11 @@ export class WorkExperienceModal {
    * 建立 Parent 模態框 HTML
    * @param {Object} parentData - Parent 資料
    * @param {Array} childProjects - Child 專案陣列
-   * @param {Function} onChildClick - Child 點擊回調
+   * @param {Object} options - 額外配置（如標籤文案）
    * @returns {string} HTML 內容
    * @private
    */
-  static _buildParentModalContent(parentData, childProjects, onChildClick) {
+  static _buildParentModalContent(parentData, childProjects, options = {}) {
     const projectTableRows = childProjects
       .map((project, idx) => {
         const periodText = this._formatMultiplePeriods(project.periods || []);
@@ -79,6 +81,12 @@ export class WorkExperienceModal {
       })
       .join('');
 
+    const parentTagsHTML = this._buildTagsHTML(parentData.tags);
+    const parentTagsLabel = options.parentTagsLabel || options.tagsLabel || 'Technical Tags';
+    const periodLabel = options.periodLabel || 'Period';
+    const workingDaysLabel = options.workingDaysLabel || 'Working Days';
+    const rolesLabel = options.rolesLabel || 'Role/Content';
+
     return `
       <div class="modal-content parent-modal">
         <div class="modal-header">
@@ -89,17 +97,23 @@ export class WorkExperienceModal {
         <div class="modal-body">
           <div class="modal-info-section">
             <div class="info-row">
-              <label>期間:</label>
+              <label>${periodLabel}:</label>
               <span>${this._formatPeriodText(parentData.period)}</span>
             </div>
             <div class="info-row">
-              <label>工作天數:</label>
+              <label>${workingDaysLabel}:</label>
               <span>${parentData.workingDays || 'N/A'}</span>
             </div>
             <div class="info-row">
-              <label>職務內容:</label>
+              <label>${rolesLabel}:</label>
               <span>${parentData.summary}</span>
             </div>
+            ${parentTagsHTML ? `
+            <div class="info-row tags-row">
+              <label>${parentTagsLabel}:</label>
+              ${parentTagsHTML}
+            </div>
+            ` : ''}
           </div>
           
           <div class="modal-projects-section">
@@ -125,11 +139,17 @@ export class WorkExperienceModal {
   /**
    * 建立 Child 模態框 HTML
    * @param {Object} projectData - Child 專案物件
+   * @param {Object} options - 額外配置（如標籤文案）
    * @returns {string} HTML 內容
    * @private
    */
-  static _buildChildModalContent(projectData) {
+  static _buildChildModalContent(projectData, options = {}) {
     const contentHTML = this._buildContentSections(projectData.details?.content?.sections || []);
+    const projectTagsHTML = this._buildTagsHTML(projectData.tags);
+    const projectTagsLabel = options.projectTagsLabel || options.tagsLabel || 'Technical Tags';
+    const periodLabel = options.periodLabel || 'Period';
+    const workingDaysLabel = options.workingDaysLabel || 'Working Days';
+    const roleLabel = options.roleLabel || 'Job Role';
 
     return `
       <div class="modal-content child-modal">
@@ -141,17 +161,23 @@ export class WorkExperienceModal {
         <div class="modal-body">
           <div class="modal-info-section">
             <div class="info-row">
-              <label>期間:</label>
+              <label>${periodLabel}:</label>
               <span>${this._formatMultiplePeriods(projectData.periods || []).replace(/\n/g, '<br>')}</span>
             </div>
             <div class="info-row">
-              <label>工作天數:</label>
+              <label>${workingDaysLabel}:</label>
               <span>${projectData.details?.overview?.workingDays || 'N/A'}</span>
             </div>
             <div class="info-row">
-              <label>職務角色:</label>
+              <label>${roleLabel}:</label>
               <span>${projectData.role}</span>
             </div>
+            ${projectTagsHTML ? `
+            <div class="info-row tags-row">
+              <label>${projectTagsLabel}:</label>
+              ${projectTagsHTML}
+            </div>
+            ` : ''}
           </div>
           
           <div class="modal-content-section">
@@ -172,6 +198,46 @@ export class WorkExperienceModal {
     return sections
       .map(section => this._buildContentSection(section))
       .join('');
+  }
+
+  /**
+   * 建立標籤 HTML
+   * @param {Array} tags - 標籤陣列
+   * @returns {string} HTML
+   * @private
+   */
+  static _buildTagsHTML(tags) {
+    if (!Array.isArray(tags) || tags.length === 0) return '';
+
+    const normalizedTags = tags
+      .map(tag => this._normalizeTag(tag))
+      .filter(tag => !!tag);
+
+    if (normalizedTags.length === 0) return '';
+
+    const tagChips = normalizedTags
+      .map(tag => `<span class="modal-tag-chip">${this._escapeHTML(tag)}</span>`)
+      .join('');
+
+    return `<div class="modal-tags">${tagChips}</div>`;
+  }
+
+  /**
+   * 將標籤資料轉成字串
+   * @param {string|Object} tag - 標籤
+   * @returns {string} 標籤文字
+   * @private
+   */
+  static _normalizeTag(tag) {
+    if (typeof tag === 'string') {
+      return tag.trim();
+    }
+
+    if (tag && typeof tag === 'object') {
+      return (tag.label || tag.name || tag.title || '').toString().trim();
+    }
+
+    return '';
   }
 
   /**
@@ -311,9 +377,9 @@ export class WorkExperienceModal {
       
       // 如果上一層是 parent modal，重新綁定 child 專案點擊事件
       if (previousModal.type === 'parent' && previousModal.context) {
-        const { childProjects, onChildClick } = previousModal.context;
-        if (childProjects && onChildClick) {
-          this._bindChildProjectClickEvents(childProjects, onChildClick);
+        const { childProjects, onChildClick, options } = previousModal.context;
+        if (childProjects && childProjects.length > 0) {
+          this._bindChildProjectClickEvents(childProjects, onChildClick, options || {});
         }
       }
     } else {
@@ -328,9 +394,10 @@ export class WorkExperienceModal {
    * 綁定 child 專案點擊事件
    * @param {Array} childProjects - 子專案陣列
    * @param {Function} onChildClick - 回調函數
+   * @param {Object} options - 額外配置（如標籤文案）
    * @private
    */
-  static _bindChildProjectClickEvents(childProjects, onChildClick) {
+  static _bindChildProjectClickEvents(childProjects, onChildClick, options = {}) {
     const projectRows = document.querySelectorAll('.child-project-row');
     
     projectRows.forEach((row, idx) => {
@@ -342,7 +409,11 @@ export class WorkExperienceModal {
           e.stopPropagation();
           
           // 顯示 child 詳情模態框
-          this.showChildModal(childProjects[idx]);
+          if (onChildClick) {
+            onChildClick(childProjects[idx], options);
+          } else {
+            this.showChildModal(childProjects[idx], options);
+          }
         });
         
         clickableText.style.cursor = 'pointer';
@@ -382,6 +453,26 @@ export class WorkExperienceModal {
     if (!period) return '';
     const { start, end, duration } = period;
     return `${start} ~ ${end} (${duration})`;
+  }
+
+  /**
+   * 簡易跳脫 HTML
+   * @param {string} text - 輸入文字
+   * @returns {string} 已跳脫的文字
+   * @private
+   */
+  static _escapeHTML(text) {
+    if (typeof text !== 'string') return '';
+    return text.replace(/[&<>"']/g, (char) => {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return map[char] || char;
+    });
   }
 
   /**
