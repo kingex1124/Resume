@@ -407,6 +407,9 @@ export class WorkExperienceModal {
         clickableText.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
+
+          const projectName = childProjects[idx]?.name || clickableText.textContent || '';
+          this._trackGA(projectName);
           
           // 顯示 child 詳情模態框
           if (onChildClick) {
@@ -487,5 +490,16 @@ export class WorkExperienceModal {
     return periods
       .map(period => this._formatPeriodText(period))
       .join('\n');
+  }
+
+  /**
+   * 將點擊事件標記到 GA
+   * @param {string} name - 事件名稱
+   * @param {string} pageType - 頁面類型
+   * @private
+   */
+  static _trackGA(name, pageType = 'work-experience') {
+    if (typeof window === 'undefined' || typeof window.tagGAEvent !== 'function') return;
+    window.tagGAEvent(name, pageType);
   }
 }

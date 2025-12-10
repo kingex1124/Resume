@@ -156,6 +156,9 @@ export class WorkExperienceTable {
           const rowType = tr.getAttribute('data-type');
           const rowId = tr.getAttribute('data-id');
           const rowData = rows[idx];
+          const displayName = this._getRowDisplayName(rowData) || text.textContent || '';
+
+          this._trackGA(displayName);
           
           onRowClick({
             type: rowType,
@@ -183,5 +186,33 @@ export class WorkExperienceTable {
       project: '專案/項目',
       role: '職務/內容'
     };
+  }
+
+  /**
+   * 將點擊事件標記到 GA
+   * @param {string} name - 事件名稱
+   * @param {string} pageType - 頁面類型
+   * @private
+   */
+  static _trackGA(name, pageType = 'work-experience') {
+    if (typeof window === 'undefined' || typeof window.tagGAEvent !== 'function') return;
+    window.tagGAEvent(name, pageType);
+  }
+
+  /**
+   * 取得行顯示名稱
+   * @param {Object} rowData - 行資料
+   * @returns {string} 顯示名稱
+   * @private
+   */
+  static _getRowDisplayName(rowData) {
+    if (!rowData || !rowData.data) return '';
+    if (rowData.type === 'parent') {
+      return rowData.data.company?.name || '';
+    }
+    if (rowData.type === 'child') {
+      return rowData.data.name || '';
+    }
+    return '';
   }
 }

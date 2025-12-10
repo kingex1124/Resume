@@ -52,6 +52,32 @@
         import { LanguageManager } from './i18n/LanguageManager.js';
         import { BackToTopButton } from './components/BackToTopButton.js';
 
+        const PAGE_TYPE = 'work-experience';
+
+        // 共用 GA 標記方法
+        window.tagGAEvent = function tagGAEvent(name, type) {
+            if (typeof gtag !== 'function') return;
+            const safeName = (name || '').trim() || 'unknown';
+            const pageType = type || PAGE_TYPE;
+            gtag('event', 'click', {
+                event_category: `${safeName}-${pageType}`,
+                event_label: `${safeName}-${pageType}`,
+                value: 1,
+                transport_type: 'beacon'
+            });
+        };
+
+        function bindLinkTracking(pageType = PAGE_TYPE) {
+            document.addEventListener('click', (event) => {
+                const link = event.target.closest('a');
+                if (!link) return;
+
+                const text = (link.textContent || link.getAttribute('aria-label') || link.href || '').trim();
+                const name = text || link.href || 'unknown-link';
+                window.tagGAEvent(name, pageType);
+            });
+        }
+
         /**
          * 初始化應用程式
          */
@@ -78,6 +104,9 @@
                 }
             }
         }
+
+        // 綁定全站連結點擊追蹤
+        bindLinkTracking();
 
         // DOMContentLoaded 時初始化應用
         document.addEventListener('DOMContentLoaded', initializeApp);
